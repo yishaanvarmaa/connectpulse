@@ -8,7 +8,7 @@ use App\Services\MessageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class StatusController extends Controller
+class ConnectionController extends Controller
 {
     public function __construct(
         private MessageService $messageService
@@ -21,9 +21,16 @@ class StatusController extends Controller
 
         $status = $this->messageService->provider()->getStatus($organization);
 
+        if (! ($status['connected'] ?? false)) {
+            return response()->json([
+                'connected' => false,
+            ]);
+        }
+
         return response()->json([
-            'connected' => (bool) ($status['connected'] ?? false),
-            'phone' => $status['phone'] ?? null,
+            'connected' => true,
+            'phone' => $status['phone'] ?? $organization->whatsappConnection?->phone_number,
+            'display_name' => $organization->company_name,
         ]);
     }
 }

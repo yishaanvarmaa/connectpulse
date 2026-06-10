@@ -8,8 +8,9 @@ use App\Services\CreditService;
 use App\Services\MessageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
-class SendMessageController extends Controller
+class MessageController extends Controller
 {
     public function __construct(
         private MessageService $messageService,
@@ -26,11 +27,10 @@ class SendMessageController extends Controller
         /** @var Organization $organization */
         $organization = $request->attributes->get('organization');
 
-        $connection = $organization->whatsappConnection;
-        if (! $connection?->isConnected()) {
+        if (! $organization->whatsappConnection?->isConnected()) {
             return response()->json([
                 'success' => false,
-                'message' => 'WhatsApp is not connected. Please connect your WhatsApp account.',
+                'message' => 'WhatsApp not connected.',
             ], 422);
         }
 
@@ -47,13 +47,19 @@ class SendMessageController extends Controller
             $validated['message']
         );
 
+        Log::info('ConnectPulse API message queued', [
+            'organization_id' => $organization->id,
+            'message_log_id' => $log->id,
+            'mobile' => $log->mobile,
+        ]);
+
         return response()->json([
             'success' => true,
             'message_id' => (string) $log->id,
         ]);
     }
 
-    public function sendBulk(Request $request): JsonResponse
+    public function bulk(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'messages' => ['required', 'array', 'min:1', 'max:1000'],
@@ -64,28 +70,34 @@ class SendMessageController extends Controller
         /** @var Organization $organization */
         $organization = $request->attributes->get('organization');
 
-        $connection = $organization->whatsappConnection;
-        if (! $connection?->isConnected()) {
+        if (! $organization->whatsappConnection?->isConnected()) {
             return response()->json([
                 'success' => false,
-                'message' => 'WhatsApp is not connected. Please connect your WhatsApp account.',
+                'message' => 'WhatsApp not connected.',
             ], 422);
         }
 
-        $requiredCredits = count($validated['messages']);
-        if (! $this->creditService->hasCredits($organization, $requiredCredits)) {
+        $messageCount = count($validated['messages']);
+
+        if (! $this->creditService->hasCredits($organization, $messageCount)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Insufficient credits.',
             ], 402);
         }
 
-        $batchId = $this->messageService->queueBulk($organization, $validated['messages']);
+        $result = $this->messageService->queueBulk($organization, $validated['messages']);
+
+        Log::info('ConnectPulse API bulk messages queued', [
+            'organization_id' => $organization->id,
+            'batch_id' => $result['batch_id'],
+            'queued' => $result['queued'],
+        ]);
 
         return response()->json([
             'success' => true,
-            'batch_id' => $batchId,
-            'queued' => count($validated['messages']),
+            'batch_id' => $result['batch_id'],
+            'queued' => $result['queued'],
         ]);
     }
 }

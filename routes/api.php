@@ -1,14 +1,21 @@
 <?php
 
-use App\Http\Controllers\Api\V1\BalanceController;
-use App\Http\Controllers\Api\V1\SendMessageController;
-use App\Http\Controllers\Api\V1\StatusController;
+use App\Http\Controllers\Api\V1\ConnectionController;
+use App\Http\Controllers\Api\V1\CreditsController;
+use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Middleware\AuthenticateApiKey;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware([AuthenticateApiKey::class])->group(function () {
-    Route::post('/send-message', [SendMessageController::class, 'send']);
-    Route::post('/send-bulk', [SendMessageController::class, 'sendBulk']);
-    Route::get('/balance', BalanceController::class);
-    Route::get('/status', StatusController::class);
+    // Standard public API
+    Route::post('/messages/send', [MessageController::class, 'send']);
+    Route::post('/messages/bulk', [MessageController::class, 'bulk']);
+    Route::get('/connection', ConnectionController::class);
+    Route::get('/credits/balance', [CreditsController::class, 'balance']);
+
+    // Legacy endpoints (backward compatible)
+    Route::post('/send-message', [MessageController::class, 'send']);
+    Route::post('/send-bulk', [MessageController::class, 'bulk']);
+    Route::get('/status', ConnectionController::class);
+    Route::get('/balance', [CreditsController::class, 'balance']);
 });

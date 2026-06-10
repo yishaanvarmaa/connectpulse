@@ -8,19 +8,22 @@ use App\Services\CreditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class BalanceController extends Controller
+class CreditsController extends Controller
 {
     public function __construct(
         private CreditService $creditService
     ) {}
 
-    public function __invoke(Request $request): JsonResponse
+    public function balance(Request $request): JsonResponse
     {
         /** @var Organization $organization */
         $organization = $request->attributes->get('organization');
 
+        $balance = $this->creditService->getBalance($organization);
+
         return response()->json([
-            'balance' => $this->creditService->getBalance($organization),
+            'balance' => $balance,
+            'credits_remaining' => $balance,
         ]);
     }
 }

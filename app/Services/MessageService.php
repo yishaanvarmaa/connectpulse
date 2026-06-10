@@ -7,6 +7,7 @@ use App\Jobs\SendWhatsAppMessage;
 use App\Models\MessageLog;
 use App\Models\Organization;
 use App\Services\Messaging\WhatsAppWebProvider;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class MessageService
@@ -23,30 +24,9 @@ class MessageService
 
     public function queueMessage(Organization $organization, string $mobile, string $message): MessageLog
     {
-        $log = MessageLog::create([
-            'organization_id' => $organization->id,
-            'mobile' => $this->normalizeMobile($mobile),
-            'message' => $message,
-            'status' => MessageLog::STATUS_QUEUED,
-            'credits_used' => 0,
-        ]);
-
-        SendWhatsAppMessage::dispatch($log->id)
-            ->onQueue('messages');
-
-        return $log;
-    }
-
-    public function queueBulk(Organization $organization, array $recipients): string
-    {
-        $batchId = (string) Str::uuid();
-
-        foreach ($recipients as $recipient) {
-            $mobile = is_array($recipient) ? ($recipient['mobile'] ?? '') : $recipient;
-            $message = is_array($recipient) ? ($recipient['message'] ?? '') : '';
-
-            if (empty($mobile) || empty($message)) {
-                continue;
+        return DB::transaction(function () use ($organization, $mobile, $message) {
+            if (! $this->creditService->deductCredit($organization, "Queued message to {$mobile}")) {
+                throw new \RuntimeException('Insufficient credits.');
             }
 
             $log = MessageLog::create([
@@ -54,15 +34,57 @@ class MessageService
                 'mobile' => $this->normalizeMobile($mobile),
                 'message' => $message,
                 'status' => MessageLog::STATUS_QUEUED,
-                'credits_used' => 0,
-                'batch_id' => $batchId,
+                'credits_used' => 1,
             ]);
 
             SendWhatsAppMessage::dispatch($log->id)
                 ->onQueue('messages');
-        }
 
-        return $batchId;
+            return $log;
+        });
+    }
+
+    /**
+     * @return array{batch_id: string, queued: int}
+     */
+    public function queueBulk(Organization $organization, array $recipients): array
+    {
+        return DB::transaction(function () use ($organization, $recipients) {
+            $batchId = (string) Str::uuid();
+            $queued = 0;
+
+            foreach ($recipients as $recipient) {
+                $mobile = is_array($recipient) ? ($recipient['mobile'] ?? '') : $recipient;
+                $message = is_array($recipient) ? ($recipient['message'] ?? '') : '';
+
+                if (empty($mobile) || empty($message)) {
+                    continue;
+                }
+
+                if (! $this->creditService->deductCredit($organization, "Queued bulk message to {$mobile}")) {
+                    break;
+                }
+
+                $log = MessageLog::create([
+                    'organization_id' => $organization->id,
+                    'mobile' => $this->normalizeMobile($mobile),
+                    'message' => $message,
+                    'status' => MessageLog::STATUS_QUEUED,
+                    'credits_used' => 1,
+                    'batch_id' => $batchId,
+                ]);
+
+                SendWhatsAppMessage::dispatch($log->id)
+                    ->onQueue('messages');
+
+                $queued++;
+            }
+
+            return [
+                'batch_id' => $batchId,
+                'queued' => $queued,
+            ];
+        });
     }
 
     public function processMessage(MessageLog $log): void
@@ -82,16 +104,7 @@ class MessageService
         if (! $connection?->isConnected()) {
             $log->update([
                 'status' => MessageLog::STATUS_FAILED,
-                'error_message' => 'WhatsApp is not connected.',
-            ]);
-
-            return;
-        }
-
-        if (! $this->creditService->hasCredits($organization)) {
-            $log->update([
-                'status' => MessageLog::STATUS_FAILED,
-                'error_message' => 'Insufficient credits.',
+                'error_message' => 'WhatsApp not connected.',
             ]);
 
             return;
@@ -100,11 +113,8 @@ class MessageService
         $result = $this->provider->send($organization, $log->mobile, $log->message);
 
         if ($result['success']) {
-            $this->creditService->deductCredit($organization, "Message to {$log->mobile}");
-
             $log->update([
                 'status' => MessageLog::STATUS_SENT,
-                'credits_used' => 1,
                 'message_id' => $result['message_id'],
                 'sent_at' => now(),
             ]);

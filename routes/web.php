@@ -6,9 +6,9 @@ use App\Http\Controllers\Admin\MessageLogController as AdminMessageLogController
 use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Org\ApiKeyController;
-use App\Http\Controllers\Org\CreditController;
 use App\Http\Controllers\Org\DashboardController;
 use App\Http\Controllers\Org\MessageLogController;
+use App\Http\Controllers\Org\RechargeController;
 use App\Http\Controllers\Org\SettingsController;
 use App\Http\Controllers\Org\WhatsAppController;
 use App\Http\Middleware\EnsureOrganizationAdmin;
@@ -36,17 +36,28 @@ Route::prefix('admin')->middleware(['auth', EnsureSuperAdmin::class])->name('adm
     Route::get('/logs', [AdminMessageLogController::class, 'index'])->name('logs.index');
 });
 
-Route::prefix('dashboard')->middleware(['auth', EnsureOrganizationAdmin::class])->name('org.')->group(function () {
-    Route::get('/', DashboardController::class)->name('dashboard');
+// Organization portal — canonical URLs for external app redirects
+Route::middleware(['auth', EnsureOrganizationAdmin::class])->name('org.')->group(function () {
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
     Route::get('/whatsapp', [WhatsAppController::class, 'index'])->name('whatsapp.index');
     Route::post('/whatsapp/connect', [WhatsAppController::class, 'connect'])->name('whatsapp.connect');
     Route::get('/whatsapp/qr', [WhatsAppController::class, 'qr'])->name('whatsapp.qr');
     Route::get('/whatsapp/status', [WhatsAppController::class, 'status'])->name('whatsapp.status');
     Route::post('/whatsapp/disconnect', [WhatsAppController::class, 'disconnect'])->name('whatsapp.disconnect');
+
+    Route::get('/recharge', [RechargeController::class, 'index'])->name('recharge.index');
+
     Route::get('/api-keys', [ApiKeyController::class, 'index'])->name('api-keys.index');
     Route::post('/api-keys/regenerate', [ApiKeyController::class, 'regenerate'])->name('api-keys.regenerate');
-    Route::get('/credits', [CreditController::class, 'index'])->name('credits.index');
     Route::get('/logs', [MessageLogController::class, 'index'])->name('logs.index');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
+
+    // Legacy dashboard paths
+    Route::redirect('/dashboard/whatsapp', '/whatsapp');
+    Route::redirect('/dashboard/credits', '/recharge');
+    Route::redirect('/dashboard/api-keys', '/api-keys');
+    Route::redirect('/dashboard/logs', '/logs');
+    Route::redirect('/dashboard/settings', '/settings');
 });

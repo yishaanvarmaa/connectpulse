@@ -43,16 +43,22 @@ cd whatsapp-bridge && npm start
 | Surabhi Diagnostics | admin@surabhidiagnostics.com | password |
 | Navocab | admin@navocab.com | password |
 
-## API Endpoints
+## Public API
+
+**Base URL:** `https://connectpulse.cloud/api/v1`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/send-message` | Send single message |
-| POST | `/api/v1/send-bulk` | Send bulk messages |
-| GET | `/api/v1/balance` | Credit balance |
-| GET | `/api/v1/status` | WhatsApp connection status |
+| POST | `/messages/send` | Send single message |
+| POST | `/messages/bulk` | Send bulk messages |
+| GET | `/connection` | WhatsApp connection status |
+| GET | `/credits/balance` | Credit balance |
 
-Authentication: `X-API-KEY` and `X-API-SECRET` headers.
+Authentication: `X-API-Key` and `X-API-Secret` headers.
+
+**Organization portal:** `/whatsapp`, `/recharge`, `/api-keys`
+
+See [API Documentation](docs/API.md).
 
 ## Documentation
 

@@ -3,12 +3,7 @@
 @section('title', 'Settings')
 
 @section('nav')
-    <x-nav-link :href="route('org.dashboard')">Dashboard</x-nav-link>
-    <x-nav-link :href="route('org.whatsapp.index')">WhatsApp</x-nav-link>
-    <x-nav-link :href="route('org.api-keys.index')">API Keys</x-nav-link>
-    <x-nav-link :href="route('org.credits.index')">Credits</x-nav-link>
-    <x-nav-link :href="route('org.logs.index')">Logs</x-nav-link>
-    <x-nav-link :href="route('org.settings.index')" :active="true">Settings</x-nav-link>
+    <x-org-nav />
 @endsection
 
 @section('content')

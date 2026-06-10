@@ -34,19 +34,19 @@ ConnectPulse is a multi-tenant SaaS messaging platform. Each organization connec
 | Context | Method |
 |---------|--------|
 | Dashboard | Session-based login (Super Admin / Org Admin) |
-| REST API | `X-API-KEY` + `X-API-SECRET` headers |
+| REST API | `X-API-Key` + `X-API-Secret` headers |
 
 ## Messaging Flow
 
-1. API receives `POST /api/v1/send-message`
+1. API receives `POST /api/v1/messages/send`
 2. Middleware validates API key, organization status
 3. Controller validates WhatsApp connection and credit balance
 4. Message log created with status `queued`
 5. `SendWhatsAppMessage` job dispatched to `messages` queue
 6. Rate limiter enforces ~1 message per 2 seconds
 7. Job calls `WhatsAppWebProvider` → `WhatsAppBridgeService` → Node bridge
-8. On success: deduct 1 credit, mark log `sent`
-9. On failure: no credit deduction, mark log `failed`, retry up to 3 times
+8. Credit deducted when message is accepted into queue (1 per message)
+9. On send success: mark log `sent`; on failure: mark `failed`, retry up to 3 times
 
 ## Provider Interface
 

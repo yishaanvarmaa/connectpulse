@@ -145,19 +145,23 @@ chmod +x deploy/deploy.sh
 
 ```bash
 # Send message
-curl -X POST https://your-domain.com/api/v1/send-message \
-  -H "X-API-KEY: cp_live_..." \
-  -H "X-API-SECRET: ..." \
+curl -X POST https://connectpulse.cloud/api/v1/messages/send \
+  -H "X-API-Key: cp_live_..." \
+  -H "X-API-Secret: ..." \
   -H "Content-Type: application/json" \
-  -d '{"mobile":"9876543210","message":"Your report is ready."}'
+  -d '{"mobile":"919876543210","message":"Your report is ready."}'
 
 # Check balance
-curl https://your-domain.com/api/v1/balance \
-  -H "X-API-KEY: cp_live_..." \
-  -H "X-API-SECRET: ..."
+curl https://connectpulse.cloud/api/v1/credits/balance \
+  -H "X-API-Key: cp_live_..." \
+  -H "X-API-Secret: ..."
 
 # Connection status
-curl https://your-domain.com/api/v1/status \
-  -H "X-API-KEY: cp_live_..." \
-  -H "X-API-SECRET: ..."
+curl https://connectpulse.cloud/api/v1/connection \
+  -H "X-API-Key: cp_live_..." \
+  -H "X-API-Secret: ..."
 ```
+
+Organization portal URLs for client app redirects:
+- WhatsApp: `https://connectpulse.cloud/whatsapp`
+- Recharge: `https://connectpulse.cloud/recharge`
