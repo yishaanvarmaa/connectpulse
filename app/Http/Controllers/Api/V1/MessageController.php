@@ -27,7 +27,7 @@ class MessageController extends Controller
         /** @var Organization $organization */
         $organization = $request->attributes->get('organization');
 
-        if (! $organization->whatsappConnection?->isConnected()) {
+        if (! $this->isWhatsAppConnected($organization)) {
             return response()->json([
                 'success' => false,
                 'message' => 'WhatsApp not connected.',
@@ -70,7 +70,7 @@ class MessageController extends Controller
         /** @var Organization $organization */
         $organization = $request->attributes->get('organization');
 
-        if (! $organization->whatsappConnection?->isConnected()) {
+        if (! $this->isWhatsAppConnected($organization)) {
             return response()->json([
                 'success' => false,
                 'message' => 'WhatsApp not connected.',
@@ -99,5 +99,12 @@ class MessageController extends Controller
             'batch_id' => $result['batch_id'],
             'queued' => $result['queued'],
         ]);
+    }
+
+    private function isWhatsAppConnected(Organization $organization): bool
+    {
+        $status = $this->messageService->provider()->getStatus($organization);
+
+        return (bool) ($status['connected'] ?? false);
     }
 }

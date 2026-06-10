@@ -29,6 +29,31 @@ class ApiKeyService
         return $this->generateForOrganization($organization);
     }
 
+    public function regenerateKey(Organization $organization): ApiKey
+    {
+        $prefix = config('connectpulse.api_key_prefix', 'cp_live_');
+        $apiKey = $organization->apiKey ?? $this->generateForOrganization($organization);
+
+        $apiKey->update([
+            'api_key' => $prefix.Str::random(24),
+            'is_active' => true,
+        ]);
+
+        return $apiKey->fresh();
+    }
+
+    public function regenerateSecret(Organization $organization): ApiKey
+    {
+        $apiKey = $organization->apiKey ?? $this->generateForOrganization($organization);
+
+        $apiKey->update([
+            'api_secret' => Str::random(48),
+            'is_active' => true,
+        ]);
+
+        return $apiKey->fresh();
+    }
+
     public function findByCredentials(string $apiKey, string $apiSecret): ?ApiKey
     {
         $key = ApiKey::where('api_key', $apiKey)

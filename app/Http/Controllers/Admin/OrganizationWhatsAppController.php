@@ -1,40 +1,38 @@
 <?php
 
-namespace App\Http\Controllers\Org;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Organization;
 use App\Services\WhatsAppConnectionService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-class WhatsAppController extends Controller
+class OrganizationWhatsAppController extends Controller
 {
     public function __construct(
         private WhatsAppConnectionService $whatsappService
     ) {}
 
-    public function index(Request $request): View
+    public function show(Organization $organization): View
     {
-        $organization = $request->user()->organization;
         $organization->load('whatsappConnection');
 
-        return view('org.whatsapp.index', [
+        return view('admin.organizations.whatsapp', [
             'organization' => $organization,
             'connection' => $organization->whatsappConnection,
         ]);
     }
 
-    public function connect(Request $request): JsonResponse
+    public function connect(Organization $organization): JsonResponse
     {
-        $this->whatsappService->connect($request->user()->organization);
+        $this->whatsappService->connect($organization);
 
         return response()->json(['success' => true]);
     }
 
-    public function qr(Request $request): JsonResponse
+    public function qr(Organization $organization): JsonResponse
     {
-        $organization = $request->user()->organization;
         $qr = $this->whatsappService->getQr($organization);
         $status = $this->whatsappService->getStatus($organization);
 
@@ -44,14 +42,14 @@ class WhatsAppController extends Controller
         ]);
     }
 
-    public function status(Request $request): JsonResponse
+    public function status(Organization $organization): JsonResponse
     {
-        return response()->json($this->whatsappService->getStatus($request->user()->organization));
+        return response()->json($this->whatsappService->getStatus($organization));
     }
 
-    public function disconnect(Request $request): JsonResponse
+    public function disconnect(Organization $organization): JsonResponse
     {
-        $this->whatsappService->disconnect($request->user()->organization);
+        $this->whatsappService->disconnect($organization);
 
         return response()->json(['success' => true]);
     }

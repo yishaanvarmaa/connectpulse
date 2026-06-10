@@ -77,12 +77,23 @@ class WhatsAppWebProvider implements MessagingProviderInterface
 
     private function syncConnectionStatus(WhatsappConnection $connection, array $bridgeStatus): void
     {
-        $status = $bridgeStatus['status'] ?? $connection->status;
+        $isConnected = (bool) ($bridgeStatus['connected'] ?? false);
+        $wasConnected = $connection->isConnected();
 
-        $connection->update([
-            'status' => $status,
+        $data = [
+            'status' => $isConnected
+                ? WhatsappConnection::STATUS_CONNECTED
+                : ($bridgeStatus['status'] ?? $connection->status),
             'phone_number' => $bridgeStatus['phone'] ?? $connection->phone_number,
-            'connected_at' => ($bridgeStatus['connected'] ?? false) ? ($connection->connected_at ?? now()) : $connection->connected_at,
-        ]);
+        ];
+
+        if ($isConnected) {
+            $data['connected_at'] = $connection->connected_at ?? now();
+            $data['disconnected_at'] = null;
+        } elseif ($wasConnected) {
+            $data['disconnected_at'] = now();
+        }
+
+        $connection->update($data);
     }
 }

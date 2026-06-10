@@ -42,8 +42,10 @@
                             {{ ucfirst($org->status) }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 text-right text-sm space-x-2">
+                    <td class="px-6 py-4 text-right text-sm space-x-3">
                         <a href="{{ route('admin.organizations.show', $org) }}" class="text-brand-600 hover:text-brand-700">View</a>
+                        <a href="{{ route('admin.organizations.whatsapp', $org) }}" class="text-slate-600 hover:text-slate-900">WhatsApp</a>
+                        <a href="{{ route('admin.organizations.api-test', $org) }}" class="text-slate-600 hover:text-slate-900">API Test</a>
                     </td>
                 </tr>
             @endforeach

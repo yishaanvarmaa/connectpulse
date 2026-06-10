@@ -61,7 +61,10 @@ class OrganizationController extends Controller
     {
         $organization->load(['creditWallet', 'whatsappConnection', 'apiKey', 'users']);
 
-        return view('admin.organizations.show', compact('organization'));
+        return view('admin.organizations.show', [
+            'organization' => $organization,
+            'messageLogs' => $organization->messageLogs()->latest()->paginate(20),
+        ]);
     }
 
     public function suspend(Organization $organization): RedirectResponse
