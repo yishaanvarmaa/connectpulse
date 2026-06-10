@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Services\Messaging;
+
+use App\Contracts\MessagingProviderInterface;
+use App\Models\Organization;
+
+class MetaCloudProvider implements MessagingProviderInterface
+{
+    public function send(Organization $organization, string $mobile, string $message): array
+    {
+        return [
+            'success' => false,
+            'message_id' => null,
+            'error' => 'Meta Cloud API provider is not yet configured.',
+        ];
+    }
+
+    public function getStatus(Organization $organization): array
+    {
+        return [
+            'connected' => false,
+            'phone' => null,
+            'status' => 'not_configured',
+        ];
+    }
+
+    public function disconnect(Organization $organization): bool
+    {
+        return false;
+    }
+
+    public function getQr(Organization $organization): ?string
+    {
+        return null;
+    }
+}
