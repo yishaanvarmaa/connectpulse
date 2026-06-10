@@ -28,9 +28,33 @@ class WhatsAppBridgeService
 
     public function getStatus(int $organizationId): array
     {
-        return $this->request('GET', '/status', [
+        $organizationId = (int) $organizationId;
+
+        $result = $this->request('GET', '/status', [
             'organization_id' => $organizationId,
         ]);
+
+        if (! array_key_exists('connected', $result)) {
+            Log::warning('WhatsApp bridge status could not be retrieved', [
+                'organization_id' => $organizationId,
+                'bridge_url' => $this->baseUrl.'/status',
+                'response' => $result,
+            ]);
+
+            return [
+                'connected' => false,
+                'phone' => null,
+                'status' => 'disconnected',
+            ];
+        }
+
+        $connected = $this->normalizeConnected($result['connected']);
+
+        return [
+            'connected' => $connected,
+            'phone' => $connected ? ($result['phone'] ?? null) : null,
+            'status' => $result['status'] ?? ($connected ? 'connected' : 'disconnected'),
+        ];
     }
 
     public function getQr(int $organizationId): array
@@ -67,13 +91,29 @@ class WhatsAppBridgeService
             };
 
             if ($response->successful()) {
-                return $response->json() ?? ['success' => true];
+                $json = $response->json();
+
+                if (! is_array($json)) {
+                    Log::warning('WhatsApp bridge returned invalid JSON', [
+                        'path' => $path,
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                    ]);
+
+                    return [
+                        'success' => false,
+                        'error' => 'Invalid bridge response.',
+                    ];
+                }
+
+                return $json;
             }
 
             Log::warning('WhatsApp bridge request failed', [
                 'path' => $path,
                 'status' => $response->status(),
                 'body' => $response->body(),
+                'payload' => $data,
             ]);
 
             return [
@@ -83,6 +123,7 @@ class WhatsAppBridgeService
         } catch (\Throwable $e) {
             Log::error('WhatsApp bridge connection error', [
                 'path' => $path,
+                'payload' => $data,
                 'error' => $e->getMessage(),
             ]);
 
@@ -91,5 +132,22 @@ class WhatsAppBridgeService
                 'error' => 'WhatsApp service is temporarily unavailable.',
             ];
         }
+    }
+
+    private function normalizeConnected(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value === 1;
+        }
+
+        if (is_string($value)) {
+            return in_array(strtolower($value), ['1', 'true', 'yes', 'connected'], true);
+        }
+
+        return false;
     }
 }

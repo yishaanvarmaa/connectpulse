@@ -42,7 +42,7 @@ class WhatsAppConnectionService
         return [
             'connected' => (bool) ($status['connected'] ?? false),
             'phone' => $status['phone'] ?? $connection?->phone_number,
-            'status' => $connection?->getClientStatus() ?? 'Disconnected',
+            'status' => $status['status'] ?? ($status['connected'] ? 'connected' : 'disconnected'),
             'connected_at' => $connection?->connected_at?->toIso8601String(),
             'disconnected_at' => $connection?->disconnected_at?->toIso8601String(),
         ];

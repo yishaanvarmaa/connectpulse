@@ -6,6 +6,7 @@ use App\Contracts\MessagingProviderInterface;
 use App\Models\Organization;
 use App\Models\WhatsappConnection;
 use App\Services\WhatsAppBridgeService;
+use Illuminate\Support\Facades\Log;
 
 class WhatsAppWebProvider implements MessagingProviderInterface
 {
@@ -15,7 +16,7 @@ class WhatsAppWebProvider implements MessagingProviderInterface
 
     public function send(Organization $organization, string $mobile, string $message): array
     {
-        $result = $this->bridge->sendMessage($organization->id, $mobile, $message);
+        $result = $this->bridge->sendMessage((int) $organization->getKey(), $mobile, $message);
 
         if (! ($result['success'] ?? false)) {
             return [
@@ -34,23 +35,36 @@ class WhatsAppWebProvider implements MessagingProviderInterface
 
     public function getStatus(Organization $organization): array
     {
-        $bridgeStatus = $this->bridge->getStatus($organization->id);
-        $connection = $organization->whatsappConnection;
+        $organizationId = (int) $organization->getKey();
+
+        if ($organizationId <= 0) {
+            Log::error('WhatsApp status check missing organization id', [
+                'organization' => $organization->only(['id', 'company_name']),
+            ]);
+
+            return [
+                'connected' => false,
+                'phone' => null,
+                'status' => 'disconnected',
+            ];
+        }
+
+        $bridgeStatus = $this->bridge->getStatus($organizationId);
+
+        $connection = $organization->relationLoaded('whatsappConnection')
+            ? $organization->whatsappConnection
+            : $organization->whatsappConnection()->first();
 
         if ($connection) {
             $this->syncConnectionStatus($connection, $bridgeStatus);
         }
 
-        return [
-            'connected' => (bool) ($bridgeStatus['connected'] ?? false),
-            'phone' => $bridgeStatus['phone'] ?? $connection?->phone_number,
-            'status' => $bridgeStatus['status'] ?? $connection?->status ?? WhatsappConnection::STATUS_DISCONNECTED,
-        ];
+        return $bridgeStatus;
     }
 
     public function disconnect(Organization $organization): bool
     {
-        $result = $this->bridge->disconnect($organization->id);
+        $result = $this->bridge->disconnect((int) $organization->getKey());
 
         if ($connection = $organization->whatsappConnection) {
             $connection->update([
@@ -65,7 +79,7 @@ class WhatsAppWebProvider implements MessagingProviderInterface
 
     public function getQr(Organization $organization): ?string
     {
-        $result = $this->bridge->getQr($organization->id);
+        $result = $this->bridge->getQr((int) $organization->getKey());
 
         if ($connection = $organization->whatsappConnection) {
             $status = ($result['qr'] ?? null) ? WhatsappConnection::STATUS_QR_REQUIRED : $connection->status;
@@ -83,7 +97,7 @@ class WhatsAppWebProvider implements MessagingProviderInterface
         $data = [
             'status' => $isConnected
                 ? WhatsappConnection::STATUS_CONNECTED
-                : ($bridgeStatus['status'] ?? $connection->status),
+                : ($bridgeStatus['status'] ?? WhatsappConnection::STATUS_DISCONNECTED),
             'phone_number' => $bridgeStatus['phone'] ?? $connection->phone_number,
         ];
 

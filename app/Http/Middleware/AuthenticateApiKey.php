@@ -41,7 +41,10 @@ class AuthenticateApiKey
             ], 403);
         }
 
-        $request->attributes->set('organization', $key->organization);
+        $organization = $key->organization;
+        $organization->loadMissing('whatsappConnection');
+
+        $request->attributes->set('organization', $organization);
         $request->attributes->set('api_key', $key);
 
         return $next($request);

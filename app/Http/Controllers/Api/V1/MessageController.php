@@ -103,8 +103,18 @@ class MessageController extends Controller
 
     private function isWhatsAppConnected(Organization $organization): bool
     {
-        $status = $this->messageService->provider()->getStatus($organization);
+        $organization->loadMissing('whatsappConnection');
 
-        return (bool) ($status['connected'] ?? false);
+        $status = $this->messageService->provider()->getStatus($organization);
+        $connected = (bool) ($status['connected'] ?? false);
+
+        if (! $connected) {
+            Log::info('ConnectPulse API blocked send: WhatsApp not connected', [
+                'organization_id' => $organization->id,
+                'bridge_status' => $status,
+            ]);
+        }
+
+        return $connected;
     }
 }

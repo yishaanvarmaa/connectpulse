@@ -19,18 +19,14 @@ class ConnectionController extends Controller
         /** @var Organization $organization */
         $organization = $request->attributes->get('organization');
 
+        $organization->loadMissing('whatsappConnection');
+
         $status = $this->messageService->provider()->getStatus($organization);
 
-        if (! ($status['connected'] ?? false)) {
-            return response()->json([
-                'connected' => false,
-            ]);
-        }
-
         return response()->json([
-            'connected' => true,
-            'phone' => $status['phone'] ?? $organization->whatsappConnection?->phone_number,
-            'display_name' => $organization->company_name,
+            'connected' => (bool) ($status['connected'] ?? false),
+            'phone' => ($status['connected'] ?? false) ? ($status['phone'] ?? null) : null,
+            'status' => $status['status'] ?? (($status['connected'] ?? false) ? 'connected' : 'disconnected'),
         ]);
     }
 }
