@@ -67,6 +67,19 @@ class OrganizationController extends Controller
         ]);
     }
 
+    public function update(Request $request, Organization $organization): RedirectResponse
+    {
+        $validated = $request->validate([
+            'contact_person' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:organizations,email,'.$organization->id],
+            'mobile' => ['required', 'string', 'max:20'],
+        ]);
+
+        $organization->update($validated);
+
+        return back()->with('success', 'Organization details updated.');
+    }
+
     public function suspend(Organization $organization): RedirectResponse
     {
         $this->organizationService->suspend($organization);

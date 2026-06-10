@@ -38,4 +38,21 @@ class CreditController extends Controller
 
         return back()->with('success', 'Credits added successfully.');
     }
+
+    public function setBalance(Request $request, Organization $organization): RedirectResponse
+    {
+        $validated = $request->validate([
+            'balance' => ['required', 'integer', 'min:0'],
+            'remarks' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $this->creditService->setBalance(
+            $organization,
+            (int) $validated['balance'],
+            $validated['remarks'] ?? 'Admin set balance',
+            $request->user()->id
+        );
+
+        return back()->with('success', 'Credit balance updated to '.number_format($validated['balance']).'.');
+    }
 }

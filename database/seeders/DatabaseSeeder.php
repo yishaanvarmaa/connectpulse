@@ -26,10 +26,10 @@ class DatabaseSeeder extends Seeder
             'company_name' => 'Surabhi Diagnostics',
             'contact_person' => 'Surabhi Admin',
             'email' => 'admin@surabhidiagnostics.com',
-            'mobile' => '9876543210',
+            'mobile' => '919553095537',
         ], 'password');
 
-        $creditService->addCredits($surabhi, 5000, 'Initial credits for Surabhi Diagnostics');
+        $creditService->addCredits($surabhi, 1000, 'Initial credits for Surabhi Diagnostics');
 
         $navocab = $organizationService->create([
             'company_name' => 'Navocab',

@@ -31,9 +31,10 @@ Route::post('/logout', [LoginController::class, 'logout'])
 
 Route::prefix('admin')->middleware(['auth', EnsureSuperAdmin::class])->name('admin.')->group(function () {
     Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
-    Route::resource('organizations', OrganizationController::class)->except(['edit', 'update']);
+    Route::resource('organizations', OrganizationController::class)->except(['edit']);
     Route::post('/organizations/{organization}/suspend', [OrganizationController::class, 'suspend'])->name('organizations.suspend');
     Route::post('/organizations/{organization}/activate', [OrganizationController::class, 'activate'])->name('organizations.activate');
+    Route::post('/credits/{organization}/set', [AdminCreditController::class, 'setBalance'])->name('credits.set');
 
     Route::post('/organizations/{organization}/api-keys/regenerate', [OrganizationApiKeyController::class, 'regenerateBoth'])->name('organizations.api-keys.regenerate');
     Route::post('/organizations/{organization}/api-keys/regenerate-key', [OrganizationApiKeyController::class, 'regenerateKey'])->name('organizations.api-keys.regenerate-key');

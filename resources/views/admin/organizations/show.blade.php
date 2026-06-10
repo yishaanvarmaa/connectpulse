@@ -21,11 +21,25 @@
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     <div class="rounded-xl bg-white border border-slate-200 p-6 shadow-sm">
         <h2 class="font-semibold text-slate-900 mb-4">Organization Details</h2>
-        <dl class="space-y-3 text-sm">
-            <div class="flex justify-between gap-4"><dt class="text-slate-500 shrink-0">Contact</dt><dd class="text-right">{{ $organization->contact_person }}</dd></div>
-            <div class="flex justify-between gap-4"><dt class="text-slate-500 shrink-0">Email</dt><dd class="text-right">{{ $organization->email }}</dd></div>
-            <div class="flex justify-between gap-4"><dt class="text-slate-500 shrink-0">Mobile</dt><dd class="text-right">{{ $organization->mobile }}</dd></div>
-        </dl>
+        <form method="POST" action="{{ route('admin.organizations.update', $organization) }}" class="space-y-4">
+            @csrf @method('PUT')
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Contact Person</label>
+                <input name="contact_person" value="{{ old('contact_person', $organization->contact_person) }}" required
+                       class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Email</label>
+                <input name="email" type="email" value="{{ old('email', $organization->email) }}" required
+                       class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Mobile</label>
+                <input name="mobile" value="{{ old('mobile', $organization->mobile) }}" required
+                       class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            </div>
+            <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">Save Details</button>
+        </form>
         <div class="mt-6 flex flex-wrap gap-2">
             <a href="{{ route('admin.organizations.whatsapp', $organization) }}" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">WhatsApp</a>
             <a href="{{ route('admin.organizations.api-test', $organization) }}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">API Test</a>
@@ -72,11 +86,17 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     <div class="rounded-xl bg-white border border-slate-200 p-6 shadow-sm">
-        <h2 class="font-semibold text-slate-900 mb-4">Actions</h2>
+        <h2 class="font-semibold text-slate-900 mb-4">Credits</h2>
+        <form method="POST" action="{{ route('admin.credits.set', $organization) }}" class="flex gap-2 mb-3">
+            @csrf
+            <input name="balance" type="number" min="0" value="{{ $organization->creditWallet?->balance ?? 0 }}" required
+                   class="rounded-lg border border-slate-300 px-3 py-2 text-sm flex-1">
+            <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white whitespace-nowrap">Set Balance</button>
+        </form>
         <form method="POST" action="{{ route('admin.credits.store', $organization) }}" class="flex gap-2 mb-4">
             @csrf
             <input name="amount" type="number" min="1" placeholder="Credits to add" required class="rounded-lg border border-slate-300 px-3 py-2 text-sm flex-1">
-            <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white">Add Credits</button>
+            <button type="submit" class="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 whitespace-nowrap">Add Credits</button>
         </form>
         <div class="flex gap-2">
             @if($organization->isActive())

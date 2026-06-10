@@ -45,6 +45,31 @@ class CreditService
         });
     }
 
+    public function setBalance(Organization $organization, int $balance, ?string $remarks = null, ?int $createdBy = null): ?CreditTransaction
+    {
+        return DB::transaction(function () use ($organization, $balance, $remarks, $createdBy) {
+            $wallet = $this->ensureWallet($organization);
+            $previous = $wallet->balance;
+
+            if ($previous === $balance) {
+                return null;
+            }
+
+            $wallet->update(['balance' => $balance]);
+
+            $diff = $balance - $previous;
+
+            return CreditTransaction::create([
+                'organization_id' => $organization->id,
+                'type' => $diff >= 0 ? CreditTransaction::TYPE_CREDIT : CreditTransaction::TYPE_DEBIT,
+                'amount' => abs($diff),
+                'balance_after' => $balance,
+                'remarks' => $remarks ?? 'Admin balance adjustment',
+                'created_by' => $createdBy,
+            ]);
+        });
+    }
+
     public function deductCredit(Organization $organization, ?string $remarks = null): ?CreditTransaction
     {
         return DB::transaction(function () use ($organization, $remarks) {
