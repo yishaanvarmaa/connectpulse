@@ -10,11 +10,15 @@ import QRCode from 'qrcode';
 import { config } from './config.js';
 
 const logger = Pino({ level: 'warn' });
+const MAX_RECONNECT_ATTEMPTS = 3;
+const RECONNECT_DELAY_MS = 5000;
 
 class SessionManager {
     constructor() {
         this.sessions = new Map();
         this.qrCodes = new Map();
+        this.reconnectAttempts = new Map();
+        this.connecting = new Set();
     }
 
     getSessionPath(organizationId) {
@@ -30,15 +34,47 @@ class SessionManager {
         return sessionPath;
     }
 
+    clearSessionFiles(organizationId) {
+        const sessionPath = this.getSessionPath(organizationId);
+        if (fs.existsSync(sessionPath)) {
+            fs.rmSync(sessionPath, { recursive: true, force: true });
+        }
+    }
+
+    async teardownSession(organizationId, clearFiles = false) {
+        const id = String(organizationId);
+        const session = this.sessions.get(id);
+
+        if (session?.sock) {
+            try {
+                session.sock.ev.removeAllListeners('connection.update');
+                session.sock.ev.removeAllListeners('creds.update');
+                session.sock.end(undefined);
+            } catch {
+                // ignore
+            }
+        }
+
+        this.sessions.delete(id);
+        this.qrCodes.delete(id);
+        this.reconnectAttempts.delete(id);
+        this.connecting.delete(id);
+
+        if (clearFiles) {
+            this.clearSessionFiles(organizationId);
+        }
+    }
+
     getSession(organizationId) {
         return this.sessions.get(String(organizationId));
     }
 
     getStatus(organizationId) {
-        const session = this.getSession(String(organizationId));
+        const id = String(organizationId);
+        const session = this.getSession(id);
 
         if (!session) {
-            const qr = this.qrCodes.get(String(organizationId));
+            const qr = this.qrCodes.get(id);
             return {
                 connected: false,
                 phone: null,
@@ -46,10 +82,27 @@ class SessionManager {
             };
         }
 
+        if (session.connected) {
+            return {
+                connected: true,
+                phone: session.phone || null,
+                status: 'connected',
+            };
+        }
+
+        const qr = this.qrCodes.get(id);
+        if (qr) {
+            return {
+                connected: false,
+                phone: null,
+                status: 'qr_required',
+            };
+        }
+
         return {
-            connected: session.connected,
-            phone: session.phone || null,
-            status: session.connected ? 'connected' : (this.qrCodes.get(String(organizationId)) ? 'qr_required' : 'reconnecting'),
+            connected: false,
+            phone: null,
+            status: 'reconnecting',
         };
     }
 
@@ -64,68 +117,100 @@ class SessionManager {
             return { success: true, status: 'connected' };
         }
 
+        await this.teardownSession(id, true);
         await this.createSocket(id);
+
         return { success: true, status: 'qr_required' };
     }
 
     async createSocket(organizationId) {
-        const sessionPath = this.ensureSessionDir(organizationId);
-        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-        const { version } = await fetchLatestBaileysVersion();
+        const id = String(organizationId);
 
-        const sock = makeWASocket({
-            version,
-            auth: state,
-            logger,
-            printQRInTerminal: false,
-            generateHighQualityLinkPreview: false,
-            syncFullHistory: false,
-        });
+        if (this.connecting.has(id)) {
+            return;
+        }
 
-        const sessionData = {
-            sock,
-            connected: false,
-            phone: null,
-            organizationId,
-        };
+        this.connecting.add(id);
 
-        this.sessions.set(organizationId, sessionData);
+        try {
+            const sessionPath = this.ensureSessionDir(organizationId);
+            const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+            const { version } = await fetchLatestBaileysVersion();
 
-        sock.ev.on('creds.update', saveCreds);
+            const sock = makeWASocket({
+                version,
+                auth: state,
+                logger,
+                printQRInTerminal: false,
+                generateHighQualityLinkPreview: false,
+                syncFullHistory: false,
+            });
 
-        sock.ev.on('connection.update', async (update) => {
-            const { connection, lastDisconnect, qr } = update;
+            const sessionData = {
+                sock,
+                connected: false,
+                phone: null,
+                organizationId: id,
+            };
 
-            if (qr) {
-                try {
-                    const qrDataUrl = await QRCode.toDataURL(qr);
-                    this.qrCodes.set(organizationId, qrDataUrl);
-                } catch (err) {
-                    logger.error({ err }, 'Failed to generate QR code');
+            this.sessions.set(id, sessionData);
+
+            sock.ev.on('creds.update', saveCreds);
+
+            sock.ev.on('connection.update', async (update) => {
+                const { connection, lastDisconnect, qr } = update;
+
+                if (qr) {
+                    try {
+                        const qrDataUrl = await QRCode.toDataURL(qr);
+                        this.qrCodes.set(id, qrDataUrl);
+                        this.reconnectAttempts.delete(id);
+                    } catch (err) {
+                        logger.error({ err }, 'Failed to generate QR code');
+                    }
                 }
-            }
 
-            if (connection === 'open') {
-                sessionData.connected = true;
-                this.qrCodes.delete(organizationId);
-                const user = sock.user;
-                sessionData.phone = user?.id?.split(':')[0] || null;
-            }
-
-            if (connection === 'close') {
-                sessionData.connected = false;
-                const statusCode = lastDisconnect?.error?.output?.statusCode;
-                const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-
-                if (shouldReconnect) {
-                    this.sessions.delete(organizationId);
-                    setTimeout(() => this.createSocket(organizationId), 3000);
-                } else {
-                    this.sessions.delete(organizationId);
-                    this.qrCodes.delete(organizationId);
+                if (connection === 'open') {
+                    sessionData.connected = true;
+                    this.qrCodes.delete(id);
+                    this.reconnectAttempts.delete(id);
+                    const user = sock.user;
+                    sessionData.phone = user?.id?.split(':')[0] || null;
                 }
-            }
-        });
+
+                if (connection === 'close') {
+                    sessionData.connected = false;
+                    const statusCode = lastDisconnect?.error?.output?.statusCode;
+                    const loggedOut = statusCode === DisconnectReason.loggedOut;
+                    const restartRequired = statusCode === DisconnectReason.restartRequired;
+                    const badSession = loggedOut || restartRequired || statusCode === 401 || statusCode === 403;
+
+                    await this.teardownSession(id, badSession);
+
+                    if (badSession) {
+                        logger.warn({ organizationId: id, statusCode }, 'Session invalid — QR required');
+                        return;
+                    }
+
+                    const attempts = (this.reconnectAttempts.get(id) || 0) + 1;
+                    this.reconnectAttempts.set(id, attempts);
+
+                    if (attempts >= MAX_RECONNECT_ATTEMPTS) {
+                        logger.warn({ organizationId: id, attempts }, 'Max reconnect attempts — clearing session');
+                        this.reconnectAttempts.delete(id);
+                        this.clearSessionFiles(organizationId);
+                        return;
+                    }
+
+                    setTimeout(() => this.createSocket(id), RECONNECT_DELAY_MS);
+                }
+            });
+        } catch (err) {
+            logger.error({ err, organizationId: id }, 'Failed to create WhatsApp socket');
+            await this.teardownSession(id, false);
+        } finally {
+            this.connecting.delete(id);
+        }
     }
 
     async sendMessage(organizationId, mobile, message) {
@@ -173,13 +258,7 @@ class SessionManager {
             }
         }
 
-        this.sessions.delete(id);
-        this.qrCodes.delete(id);
-
-        const sessionPath = this.getSessionPath(organizationId);
-        if (fs.existsSync(sessionPath)) {
-            fs.rmSync(sessionPath, { recursive: true, force: true });
-        }
+        await this.teardownSession(id, true);
 
         return { success: true };
     }

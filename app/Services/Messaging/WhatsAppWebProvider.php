@@ -98,7 +98,7 @@ class WhatsAppWebProvider implements MessagingProviderInterface
             'status' => $isConnected
                 ? WhatsappConnection::STATUS_CONNECTED
                 : ($bridgeStatus['status'] ?? WhatsappConnection::STATUS_DISCONNECTED),
-            'phone_number' => $bridgeStatus['phone'] ?? $connection->phone_number,
+            'phone_number' => $isConnected ? ($bridgeStatus['phone'] ?? $connection->phone_number) : null,
         ];
 
         if ($isConnected) {

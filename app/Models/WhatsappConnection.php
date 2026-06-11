@@ -44,10 +44,18 @@ class WhatsappConnection extends Model
 
     public function getClientStatus(): string
     {
-        return match ($this->status) {
-            self::STATUS_CONNECTED => 'Connected',
-            self::STATUS_QR_REQUIRED => 'Reconnect Required',
-            self::STATUS_RECONNECTING => 'Reconnect Required',
+        return self::formatBridgeStatus($this->status, $this->isConnected());
+    }
+
+    public static function formatBridgeStatus(?string $status, bool $connected = false): string
+    {
+        if ($connected || $status === self::STATUS_CONNECTED) {
+            return 'Connected';
+        }
+
+        return match ($status) {
+            self::STATUS_QR_REQUIRED, 'qr_required' => 'Scan QR to Connect',
+            self::STATUS_RECONNECTING, 'reconnecting' => 'Reconnect Required',
             default => 'Disconnected',
         };
     }

@@ -23,9 +23,15 @@ class WhatsAppConnectionService
 
     public function connect(Organization $organization): void
     {
+        $liveStatus = $this->messageService->provider()->getStatus($organization);
+
+        if (in_array($liveStatus['status'] ?? '', ['reconnecting', 'qr_required'], true) && ! ($liveStatus['connected'] ?? false)) {
+            $this->messageService->provider()->disconnect($organization);
+        }
+
         $connection = $this->ensureConnection($organization);
 
-        $this->bridgeService->initSession($organization->id);
+        $this->bridgeService->initSession((int) $organization->id);
         $connection->update(['status' => WhatsappConnection::STATUS_QR_REQUIRED]);
     }
 
@@ -37,14 +43,17 @@ class WhatsAppConnectionService
     public function getStatus(Organization $organization): array
     {
         $status = $this->messageService->provider()->getStatus($organization);
-        $connection = $organization->fresh()->whatsappConnection;
+        $connected = (bool) ($status['connected'] ?? false);
+        $bridgeStatus = $status['status'] ?? WhatsappConnection::STATUS_DISCONNECTED;
 
         return [
-            'connected' => (bool) ($status['connected'] ?? false),
-            'phone' => $status['phone'] ?? $connection?->phone_number,
-            'status' => $status['status'] ?? ($status['connected'] ? 'connected' : 'disconnected'),
-            'connected_at' => $connection?->connected_at?->toIso8601String(),
-            'disconnected_at' => $connection?->disconnected_at?->toIso8601String(),
+            'connected' => $connected,
+            'phone' => $connected ? ($status['phone'] ?? null) : null,
+            'status' => $bridgeStatus,
+            'display_status' => WhatsappConnection::formatBridgeStatus($bridgeStatus, $connected),
+            'needs_qr' => in_array($bridgeStatus, ['qr_required', 'reconnecting', 'disconnected'], true) && ! $connected,
+            'connected_at' => $organization->fresh()->whatsappConnection?->connected_at?->toIso8601String(),
+            'disconnected_at' => $organization->fresh()->whatsappConnection?->disconnected_at?->toIso8601String(),
         ];
     }
 
