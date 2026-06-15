@@ -16,12 +16,5 @@ return [
         'website' => env('APP_URL', 'https://connectpulse.cloud'),
     ],
 
-    'pricing' => [
-        ['credits' => 500, 'price' => 499, 'label' => 'Starter'],
-        ['credits' => 2000, 'price' => 1799, 'label' => 'Growth', 'popular' => true],
-        ['credits' => 5000, 'price' => 3999, 'label' => 'Business'],
-        ['credits' => 10000, 'price' => 7499, 'label' => 'Enterprise'],
-    ],
-
-    'credit_price_inr' => (float) env('CONNECTPULSE_CREDIT_PRICE_INR', 1),
+    'credit_price_inr' => env('CONNECTPULSE_CREDIT_PRICE_INR'),
 ];
