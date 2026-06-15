@@ -39,5 +39,23 @@ class DatabaseSeeder extends Seeder
         ], 'password');
 
         $creditService->addCredits($navocab, 1000, 'Initial credits for Navocab');
+
+        $sreekari = $organizationService->create([
+            'company_name' => 'Sreekari Diagnostix',
+            'contact_person' => 'Sreekari Admin',
+            'email' => 'admin@sreekaridiagnostix.com',
+            'mobile' => '919000000000',
+        ], 'password');
+
+        $creditService->addCredits($sreekari, 1000, 'Initial credits for Sreekari Diagnostix');
+
+        $narayani = $organizationService->create([
+            'company_name' => 'Sri Narayani Imaging',
+            'contact_person' => 'Narayani Admin',
+            'email' => 'imaging@sreekaridiagnostix.com',
+            'mobile' => '919000000002',
+        ], 'password');
+
+        $creditService->addCredits($narayani, 1000, 'Initial credits for Sri Narayani Imaging');
     }
 }
