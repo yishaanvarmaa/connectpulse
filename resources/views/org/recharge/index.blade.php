@@ -21,7 +21,15 @@
 
     <div class="lg:col-span-2 rounded-xl bg-white border border-slate-200 p-6 shadow-sm">
         <h2 class="font-semibold text-slate-900 mb-2">Add Credits</h2>
-        <p class="text-sm text-slate-500 mb-4">Recharge credits online from our <a href="{{ route('pricing') }}" class="text-brand-600 hover:underline">pricing page</a>. Razorpay payment integration coming soon — contact support for manual recharge in the meantime.</p>
+        <p class="text-sm text-slate-500 mb-4">Recharge online from our <a href="{{ route('pricing') }}" class="text-brand-600 hover:underline">pricing page</a>. Razorpay payment coming soon — contact support for manual recharge until then.</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            @foreach(config('connectpulse.pricing') as $plan)
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center">
+                    <p class="text-sm font-bold text-slate-900">₹{{ number_format($plan['price']) }}</p>
+                    <p class="text-xs text-slate-500">{{ number_format($plan['credits']) }} credits</p>
+                </div>
+            @endforeach
+        </div>
         <div class="flex flex-wrap gap-3">
             <a href="mailto:support@connectpulse.cloud?subject=Credit%20Recharge%20-%20{{ urlencode($organization->company_name) }}"
                class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">

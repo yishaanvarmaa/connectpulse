@@ -15,7 +15,7 @@ class MarketingController extends Controller
     public function pricing(): View
     {
         return view('marketing.pricing', [
-            'creditPrice' => config('connectpulse.credit_price_inr'),
+            'plans' => config('connectpulse.pricing'),
         ]);
     }
 
