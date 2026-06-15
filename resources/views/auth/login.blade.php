@@ -10,10 +10,12 @@
 <body class="h-full font-sans antialiased bg-slate-50">
 <div class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div class="mx-auto h-12 w-12 rounded-xl bg-brand-600 flex items-center justify-center">
-            <span class="text-white font-bold text-lg">CP</span>
-        </div>
-        <h1 class="mt-4 text-2xl font-bold text-slate-900">ConnectPulse</h1>
+        <a href="{{ route('home') }}" class="inline-block">
+            <div class="mx-auto h-12 w-12 rounded-xl bg-brand-600 flex items-center justify-center">
+                <span class="text-white font-bold text-lg">CP</span>
+            </div>
+            <h1 class="mt-4 text-2xl font-bold text-slate-900">ConnectPulse</h1>
+        </a>
         <p class="mt-2 text-sm text-slate-500">Centralized messaging for your business</p>
     </div>
 
@@ -44,7 +46,15 @@
                     Sign in
                 </button>
             </form>
+            <p class="mt-6 text-center text-xs text-slate-400">
+                <a href="{{ route('home') }}" class="hover:text-brand-600">← Back to website</a>
+            </p>
         </div>
+        <p class="mt-6 text-center text-xs text-slate-400">
+            <a href="{{ route('privacy') }}" class="hover:underline">Privacy</a> ·
+            <a href="{{ route('terms') }}" class="hover:underline">Terms</a> ·
+            <a href="{{ route('refund') }}" class="hover:underline">Refunds</a>
+        </p>
     </div>
 </div>
 </body>

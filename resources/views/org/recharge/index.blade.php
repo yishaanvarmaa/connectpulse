@@ -21,7 +21,7 @@
 
     <div class="lg:col-span-2 rounded-xl bg-white border border-slate-200 p-6 shadow-sm">
         <h2 class="font-semibold text-slate-900 mb-2">Add Credits</h2>
-        <p class="text-sm text-slate-500 mb-4">Online payment integration coming soon. Contact your ConnectPulse administrator to recharge your account.</p>
+        <p class="text-sm text-slate-500 mb-4">Recharge credits online from our <a href="{{ route('pricing') }}" class="text-brand-600 hover:underline">pricing page</a>. Razorpay payment integration coming soon — contact support for manual recharge in the meantime.</p>
         <div class="flex flex-wrap gap-3">
             <a href="mailto:support@connectpulse.cloud?subject=Credit%20Recharge%20-%20{{ urlencode($organization->company_name) }}"
                class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">

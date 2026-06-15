@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Web\MarketingController;
 use App\Http\Controllers\Admin\CreditController as AdminCreditController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\MessageLogController as AdminMessageLogController;
@@ -18,7 +19,12 @@ use App\Http\Middleware\EnsureOrganizationAdmin;
 use App\Http\Middleware\EnsureSuperAdmin;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => redirect()->route('login'));
+Route::get('/', [MarketingController::class, 'home'])->name('home');
+Route::get('/pricing', [MarketingController::class, 'pricing'])->name('pricing');
+Route::get('/contact', [MarketingController::class, 'contact'])->name('contact');
+Route::get('/privacy-policy', [MarketingController::class, 'privacy'])->name('privacy');
+Route::get('/terms', [MarketingController::class, 'terms'])->name('terms');
+Route::get('/refund-policy', [MarketingController::class, 'refund'])->name('refund');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
