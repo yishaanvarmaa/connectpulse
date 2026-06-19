@@ -1,6 +1,8 @@
 @php
     $business = config('connectpulse.business.legal_name');
+    $product = config('connectpulse.business.product_name');
     $email = config('connectpulse.business.support_email');
+    $gateway = config('connectpulse.business.payment_gateway');
 @endphp
 
 @extends('layouts.marketing')
@@ -14,10 +16,10 @@
         <p class="text-sm text-slate-500 mt-2">Last updated: {{ date('F j, Y') }}</p>
 
         <div class="mt-8 space-y-6 text-sm text-slate-600 leading-relaxed">
-            <p>This Refund Policy applies to credit purchases made on the ConnectPulse platform operated by {{ $business }}.</p>
+            <p>This Refund Policy applies to credit purchases made on the {{ $product }} platform operated by {{ $business }}.</p>
 
             <h2 class="text-lg font-semibold text-slate-900 pt-4">1. Nature of product</h2>
-            <p>ConnectPulse sells prepaid digital messaging credits. Credits are consumed when messages are accepted into our delivery queue. This is a digital service delivered immediately upon successful payment.</p>
+            <p>{{ $product }} sells prepaid digital messaging credits. Credits are consumed when messages are accepted into our delivery queue. This is a digital service delivered immediately upon successful payment.</p>
 
             <h2 class="text-lg font-semibold text-slate-900 pt-4">2. Refund eligibility</h2>
             <ul class="list-disc pl-5 space-y-1">
@@ -39,13 +41,13 @@
             <p>Email {{ $email }} with your organization name, transaction ID / payment reference, date of purchase, and reason for the request. We will respond within 5 business days.</p>
 
             <h2 class="text-lg font-semibold text-slate-900 pt-4">5. Refund processing</h2>
-            <p>Approved refunds are processed to the original payment method within 7–10 business days. Razorpay / bank processing times may apply.</p>
+            <p>Approved refunds are processed to the original payment method within 7–10 business days. {{ $gateway }} / bank processing times may apply.</p>
 
             <h2 class="text-lg font-semibold text-slate-900 pt-4">6. Cancellation</h2>
             <p>You may close your account at any time by contacting support. Unused credits at the time of closure will be handled per this policy. No automatic recurring subscriptions apply — all purchases are one-time credit top-ups unless otherwise agreed in writing.</p>
 
             <h2 class="text-lg font-semibold text-slate-900 pt-4">7. Contact</h2>
-            <p>{{ $email }} | {{ config('connectpulse.business.support_phone') }}</p>
+            <p>{{ $email }}</p>
         </div>
     </div>
 </section>

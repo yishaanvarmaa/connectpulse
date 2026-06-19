@@ -55,6 +55,9 @@
             <a href="{{ route('terms') }}" class="hover:underline">Terms</a> ·
             <a href="{{ route('refund') }}" class="hover:underline">Refunds</a>
         </p>
+        <p class="mt-3 text-center text-xs text-slate-400">
+            {{ config('connectpulse.business.product_name') }} is a product of {{ config('connectpulse.business.legal_name') }}.
+        </p>
     </div>
 </div>
 </body>

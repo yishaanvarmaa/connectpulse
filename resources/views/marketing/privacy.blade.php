@@ -1,6 +1,8 @@
 @php
     $business = config('connectpulse.business.legal_name');
+    $product = config('connectpulse.business.product_name');
     $email = config('connectpulse.business.support_email');
+    $gateway = config('connectpulse.business.payment_gateway');
     $website = config('connectpulse.business.website');
 @endphp
 
@@ -15,12 +17,12 @@
         <p class="text-sm text-slate-500 not-prose mt-2">Last updated: {{ date('F j, Y') }}</p>
 
         <div class="mt-8 space-y-6 text-sm text-slate-600 leading-relaxed">
-            <p>{{ $business }} ("we", "us", "ConnectPulse") operates {{ $website }} and provides a WhatsApp messaging platform for businesses. This Privacy Policy explains how we collect, use, and protect your information.</p>
+            <p>{{ $business }} ("we", "us") operates {{ $product }} at {{ $website }}. {{ $product }} is a product of {{ $business }}. This Privacy Policy explains how we collect, use, and protect your information.</p>
 
             <h2 class="text-lg font-semibold text-slate-900 pt-4">1. Information we collect</h2>
             <ul class="list-disc pl-5 space-y-1">
                 <li><strong>Account information:</strong> Company name, contact person, email, mobile number, and login credentials.</li>
-                <li><strong>Payment information:</strong> Billing details processed securely through Razorpay. We do not store full card or UPI credentials on our servers.</li>
+                <li><strong>Payment information:</strong> Billing details processed securely through {{ $gateway }}. We do not store full card or UPI credentials on our servers.</li>
                 <li><strong>Usage data:</strong> API requests, message logs (recipient numbers and message content sent via our platform), credit transactions, and WhatsApp connection status.</li>
                 <li><strong>Technical data:</strong> IP address, browser type, and access logs for security and service improvement.</li>
             </ul>
@@ -41,7 +43,7 @@
             <h2 class="text-lg font-semibold text-slate-900 pt-4">4. Data sharing</h2>
             <p>We do not sell your personal data. We may share data with:</p>
             <ul class="list-disc pl-5 space-y-1">
-                <li><strong>Payment processors</strong> (e.g. Razorpay) to process transactions</li>
+                <li><strong>Payment processors</strong> (e.g. {{ $gateway }}) to process transactions</li>
                 <li><strong>Infrastructure providers</strong> hosting our servers</li>
                 <li><strong>Legal authorities</strong> when required by law</li>
             </ul>
@@ -56,7 +58,7 @@
             <p>You may request access, correction, or deletion of your personal data by emailing {{ $email }}. Indian users may have additional rights under applicable data protection laws.</p>
 
             <h2 class="text-lg font-semibold text-slate-900 pt-4">8. Contact</h2>
-            <p>For privacy-related questions, contact us at {{ $email }} or {{ config('connectpulse.business.support_phone') }}.</p>
+            <p>For privacy-related questions, contact us at {{ $email }}.</p>
         </div>
     </div>
 </section>

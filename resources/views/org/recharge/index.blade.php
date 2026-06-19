@@ -21,7 +21,7 @@
 
     <div class="lg:col-span-2 rounded-xl bg-white border border-slate-200 p-6 shadow-sm">
         <h2 class="font-semibold text-slate-900 mb-2">Add Credits</h2>
-        <p class="text-sm text-slate-500 mb-4">Recharge online from our <a href="{{ route('pricing') }}" class="text-brand-600 hover:underline">pricing page</a>. Razorpay payment coming soon — contact support for manual recharge until then.</p>
+        <p class="text-sm text-slate-500 mb-4">Recharge online from our <a href="{{ route('pricing') }}" class="text-brand-600 hover:underline">pricing page</a>. Payments via Cashfree — contact support if you need help recharging.</p>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
             @foreach(config('connectpulse.pricing') as $plan)
                 <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center">

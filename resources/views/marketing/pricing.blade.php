@@ -8,7 +8,7 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
         <h1 class="text-4xl font-bold text-slate-900">Recharge plans</h1>
         <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
-            <strong>1 credit = 1 WhatsApp message.</strong> Choose a recharge pack, pay once, and use credits from your dashboard. Online payments via Razorpay (coming soon).
+            <strong>1 credit = 1 WhatsApp message.</strong> Choose a recharge pack, pay once, and use credits from your dashboard. Payments processed securely via Cashfree.
         </p>
     </div>
 </section>
