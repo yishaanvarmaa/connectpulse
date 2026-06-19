@@ -61,8 +61,7 @@
                         Centralized WhatsApp messaging platform for businesses. Connect your number once, integrate via REST API, and send notifications at scale.
                     </p>
                     <p class="mt-4 text-sm text-slate-400">
-                        {{ config('connectpulse.business.support_email') }}<br>
-                        {{ config('connectpulse.business.support_phone') }}
+                        {{ config('connectpulse.business.support_email') }}
                     </p>
                 </div>
 
