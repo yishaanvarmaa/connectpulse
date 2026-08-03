@@ -17,7 +17,7 @@
         <p class="text-sm text-slate-500 not-prose mt-2">Last updated: {{ date('F j, Y') }}</p>
 
         <div class="mt-8 space-y-6 text-sm text-slate-600 leading-relaxed">
-            <p>{{ $business }} ("we", "us") operates {{ $product }} at {{ $website }}. {{ $product }} is a product of {{ $business }}. This Privacy Policy explains how we collect, use, and protect your information.</p>
+            <p>{{ $business }} ("we", "us") operates {{ $product }} at {{ $website }}. This Privacy Policy explains how we collect, use, and protect your information.</p>
 
             <h2 class="text-lg font-semibold text-slate-900 pt-4">1. Information we collect</h2>
             <ul class="list-disc pl-5 space-y-1">

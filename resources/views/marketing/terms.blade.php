@@ -17,7 +17,7 @@
         <p class="text-sm text-slate-500 mt-2">Last updated: {{ date('F j, Y') }}</p>
 
         <div class="mt-8 space-y-6 text-sm text-slate-600 leading-relaxed">
-            <p>These Terms of Service ("Terms") govern your use of {{ $website }} and the {{ $product }} platform operated by {{ $business }}. {{ $product }} is a product of {{ $business }}. By creating an account or using our services, you agree to these Terms.</p>
+            <p>These Terms of Service ("Terms") govern your use of {{ $website }} and the {{ $product }} platform operated by {{ $business }}. By creating an account or using our services, you agree to these Terms.</p>
 
             <h2 class="text-lg font-semibold text-slate-900 pt-4">1. Service description</h2>
             <p>{{ $product }} provides a cloud-based platform that allows businesses to connect a WhatsApp Business number and send messages through a REST API using prepaid credits. The service includes a customer portal for WhatsApp connection, credit management, API keys, and message logs.</p>

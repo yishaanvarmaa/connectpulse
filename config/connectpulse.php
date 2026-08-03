@@ -8,7 +8,7 @@ return [
     'api_key_prefix' => env('API_KEY_PREFIX', 'cp_live_'),
 
     'business' => [
-        'legal_name' => env('CONNECTPULSE_LEGAL_NAME', 'Ishnex Solutions Private Limited'),
+        'legal_name' => env('CONNECTPULSE_LEGAL_NAME', 'ConnectPulse'),
         'product_name' => env('CONNECTPULSE_PRODUCT_NAME', 'ConnectPulse'),
         'support_email' => env('CONNECTPULSE_SUPPORT_EMAIL', 'support@connectpulse.cloud'),
         'support_phone' => env('CONNECTPULSE_SUPPORT_PHONE', ''),

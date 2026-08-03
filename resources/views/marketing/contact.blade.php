@@ -10,17 +10,10 @@
             <div>
                 <h1 class="text-4xl font-bold text-slate-900">Get in touch</h1>
                 <p class="mt-4 text-lg text-slate-600 leading-relaxed">
-                    Need a new account, help with API integration, or have a billing question? {{ config('connectpulse.business.product_name') }} is operated by {{ config('connectpulse.business.legal_name') }}.
+                    Need a new account, help with API integration, or have a billing question? We're here to help Indian businesses get started with WhatsApp messaging.
                 </p>
 
                 <div class="mt-10 space-y-6">
-                    <div class="flex gap-4">
-                        <div class="h-10 w-10 rounded-lg bg-brand-100 flex items-center justify-center text-brand-600 shrink-0">🏢</div>
-                        <div>
-                            <p class="font-semibold text-slate-900">Company</p>
-                            <p class="text-slate-600">{{ config('connectpulse.business.legal_name') }}</p>
-                        </div>
-                    </div>
                     <div class="flex gap-4">
                         <div class="h-10 w-10 rounded-lg bg-brand-100 flex items-center justify-center text-brand-600 shrink-0">✉</div>
                         <div>

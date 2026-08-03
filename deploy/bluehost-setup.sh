@@ -107,7 +107,7 @@ set_env DB_PASSWORD "$DB_PASS"
 set_env QUEUE_CONNECTION database
 set_env WHATSAPP_BRIDGE_URL http://127.0.0.1:3001
 set_env WHATSAPP_BRIDGE_SECRET "$BRIDGE_SECRET"
-set_env CONNECTPULSE_LEGAL_NAME "\"Ishnex Solutions Private Limited\""
+set_env CONNECTPULSE_LEGAL_NAME ConnectPulse
 set_env CONNECTPULSE_PRODUCT_NAME ConnectPulse
 set_env CONNECTPULSE_PAYMENT_GATEWAY Cashfree
 set_env CONNECTPULSE_SUPPORT_EMAIL support@connectpulse.cloud

@@ -88,7 +88,6 @@
             <div class="mt-10 pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
                 <div class="text-center sm:text-left">
                     <p>&copy; {{ date('Y') }} {{ config('connectpulse.business.legal_name') }}. All rights reserved.</p>
-                    <p class="mt-1 text-slate-400">{{ config('connectpulse.business.product_name') }} is a product of {{ config('connectpulse.business.legal_name') }}.</p>
                 </div>
                 @if(config('connectpulse.business.gstin'))
                     <p>GSTIN: {{ config('connectpulse.business.gstin') }}</p>
