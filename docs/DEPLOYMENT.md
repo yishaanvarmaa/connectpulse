@@ -1,5 +1,90 @@
 # ConnectPulse Deployment Guide
 
+Targets:
+- **Bluehost VPS** (Ubuntu 22.04) co-hosted with OnlyOffice — preferred for `connectpulse.cloud` after Hostinger VPS loss
+- **Hostinger VPS** (legacy Nginx layout below)
+
+---
+
+## Bluehost VPS + existing OnlyOffice (do not disturb Online Office)
+
+**Server:** `50.6.44.102` (`edt.lci.mybluehost.me`)  
+**Already running:** OnlyOffice Document Server in Docker (`onlyoffice`) behind Caddy at `https://docs.sreekaridiagnostix.com` → `127.0.0.1:8080`
+
+### Do not touch
+
+- Docker container `onlyoffice` and volumes `onlyoffice_data` / `onlyoffice_logs`
+- Caddy site block for `docs.sreekaridiagnostix.com`
+- Port **8080**
+- Hostinger shared hosting for `sreekaridiagnostix.com`
+
+### Architecture
+
+```
+Caddy :80/:443
+├── docs.sreekaridiagnostix.com → 127.0.0.1:8080 (OnlyOffice)  ← KEEP
+└── connectpulse.cloud → /var/www/connectpulse (PHP-FPM)       ← NEW
+
+PM2: connectpulse-bridge @ 127.0.0.1:3001
+Supervisor: connectpulse queue worker
+MySQL: database connectpulse (separate)
+```
+
+### DNS
+
+Point `connectpulse.cloud` **A record** → `50.6.44.102` (same IP as `docs.sreekaridiagnostix.com`).
+
+### One-shot bootstrap (SSH as root)
+
+```bash
+# Confirm OnlyOffice first
+docker ps | grep onlyoffice
+curl -I https://docs.sreekaridiagnostix.com
+
+# Clone then run bootstrap (keeps OnlyOffice / Caddy docs block intact)
+cd /tmp
+git clone -b master https://github.com/yishaanvarmaa/connectpulse.git connectpulse-src
+bash connectpulse-src/deploy/bluehost-setup.sh
+```
+
+The script:
+
+1. Installs PHP/MySQL/Node/PM2/Supervisor if missing
+2. Creates MySQL DB/user `connectpulse`
+3. Clones/updates `/var/www/connectpulse`
+4. Builds app + WhatsApp bridge
+5. **Appends** `connectpulse.cloud` to `/etc/caddy/Caddyfile` (does not replace OnlyOffice block)
+6. Reloads Caddy, starts Supervisor + PM2
+
+Caddy snippet alone: [`deploy/Caddyfile.connectpulse`](../deploy/Caddyfile.connectpulse)
+
+### Subsequent deploys
+
+```bash
+cd /var/www/connectpulse
+DEPLOY_BRANCH=master ./deploy/deploy.sh
+```
+
+### After first deploy
+
+```bash
+php scripts/setup-sreekari-centers.php
+# Re-scan WhatsApp QR for each org; regenerate API keys if DB was fresh
+```
+
+Verify:
+
+```bash
+docker ps | grep onlyoffice          # still Up
+curl -I https://docs.sreekaridiagnostix.com
+curl -I https://connectpulse.cloud
+ss -lntp | grep 3001                 # should be 127.0.0.1:3001 only
+```
+
+---
+
+## Hostinger VPS (legacy Nginx)
+
 Target: **Hostinger VPS** (Ubuntu 22.04+)
 
 ## Prerequisites
@@ -7,7 +92,7 @@ Target: **Hostinger VPS** (Ubuntu 22.04+)
 - PHP 8.4 + extensions: `mbstring`, `xml`, `curl`, `mysql`, `zip`, `bcmath`, `redis` (optional)
 - MySQL 8.0+
 - Node.js 20+
-- Nginx
+- Nginx **or** Caddy (Bluehost uses Caddy)
 - Composer
 - PM2 (`npm install -g pm2`)
 - Supervisor
@@ -69,6 +154,11 @@ WHATSAPP_BRIDGE_URL=http://127.0.0.1:3001
 WHATSAPP_BRIDGE_SECRET=generate-a-long-random-secret
 MESSAGE_RATE_LIMIT_SECONDS=2
 MESSAGE_QUEUE_RETRIES=3
+
+CONNECTPULSE_LEGAL_NAME="Ishnex Solutions Private Limited"
+CONNECTPULSE_PRODUCT_NAME=ConnectPulse
+CONNECTPULSE_PAYMENT_GATEWAY=Cashfree
+CONNECTPULSE_SUPPORT_EMAIL=support@connectpulse.cloud
 ```
 
 ```bash
@@ -105,6 +195,8 @@ sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d your-domain.com
 ```
 
+On Bluehost with Caddy, SSL is automatic — do not run certbot against Nginx if Caddy owns 80/443.
+
 ## Queue Worker (Supervisor)
 
 ```bash
@@ -128,7 +220,7 @@ pm2 startup
 
 ```bash
 chmod +x deploy/deploy.sh
-./deploy/deploy.sh
+DEPLOY_BRANCH=master ./deploy/deploy.sh
 ```
 
 ## Default Credentials (after seeding)
@@ -138,6 +230,8 @@ chmod +x deploy/deploy.sh
 | Super Admin | admin@connectpulse.app | password |
 | Surabhi Diagnostics | admin@surabhidiagnostics.com | password |
 | Navocab | admin@navocab.com | password |
+| Sreekari Diagnostix | admin@sreekaridiagnostix.com | password |
+| Sri Narayani Imaging | imaging@sreekaridiagnostix.com | password |
 
 **Change all passwords immediately in production.**
 

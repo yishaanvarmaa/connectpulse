@@ -1,0 +1,29 @@
+# ConnectPulse site block for Caddy
+# APPEND this to the existing /etc/caddy/Caddyfile — do NOT replace the
+# docs.sreekaridiagnostix.com OnlyOffice reverse_proxy block.
+#
+# Example cohabitation:
+#
+#   docs.sreekaridiagnostix.com {
+#       reverse_proxy 127.0.0.1:8080
+#   }
+#
+#   # then paste the block below
+
+connectpulse.cloud {
+	root * /var/www/connectpulse/public
+	encode gzip
+	php_fastcgi unix//run/php/php8.4-fpm.sock
+	try_files {path} /index.php?{query}
+	file_server
+
+	header {
+		X-Frame-Options SAMEORIGIN
+		X-Content-Type-Options nosniff
+	}
+
+	@static {
+		path *.css *.js *.ico *.jpg *.jpeg *.gif *.png *.svg *.woff *.woff2
+	}
+	header @static Cache-Control "public, max-age=31536000"
+}
