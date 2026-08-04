@@ -7,7 +7,6 @@ import makeWASocket, {
     makeCacheableSignalKeyStore,
     Browsers,
     jidNormalizedUser,
-    isJidUser,
 } from '@whiskeysockets/baileys';
 import Pino from 'pino';
 import QRCode from 'qrcode';
@@ -336,10 +335,11 @@ class SessionManager {
             const match = Array.isArray(results) ? results.find((r) => r?.exists) : null;
 
             if (match) {
-                // Prefer LID when WhatsApp provides it (fixes many iOS decrypt placeholders)
-                const jid = match.lid || match.jid;
+                // Use phone-number JID on Baileys 6.x. Preferring LID here without
+                // full LID support causes recipient "Waiting for this message…".
+                const jid = match.jid || match.lid;
                 if (jid) {
-                    logger.info({ number, jid, hasLid: Boolean(match.lid) }, 'Resolved WhatsApp JID');
+                    logger.info({ number, jid, lid: match.lid || null }, 'Resolved WhatsApp JID');
                     return jidNormalizedUser(jid);
                 }
             }
@@ -351,26 +351,14 @@ class SessionManager {
     }
 
     async prepareSession(sock, jid) {
+        // Ensure encrypt session exists — do NOT delete sessions on every send
+        // (that recreates broken ratchets and causes "Waiting for this message…").
         try {
             if (typeof sock.assertSessions === 'function') {
-                await sock.assertSessions([jid], true);
+                await sock.assertSessions([jid], false);
             }
         } catch (err) {
             logger.warn({ err, jid }, 'assertSessions failed — continuing send');
-        }
-
-        // Drop stale 1:1 signal session so a fresh ratchet is negotiated
-        try {
-            const signal = sock.signalRepository;
-            if (signal?.deleteSession && isJidUser(jid)) {
-                await signal.deleteSession(jid);
-                logger.info({ jid }, 'Cleared stale signal session before send');
-                if (typeof sock.assertSessions === 'function') {
-                    await sock.assertSessions([jid], true);
-                }
-            }
-        } catch (err) {
-            logger.warn({ err, jid }, 'Could not clear signal session');
         }
     }
 
