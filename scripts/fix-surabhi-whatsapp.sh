@@ -6,7 +6,9 @@ APP_DIR=/var/www/connectpulse
 cd "$APP_DIR"
 
 git config --global --add safe.directory "$APP_DIR" || true
-git checkout -- whatsapp-bridge/package.json whatsapp-bridge/package-lock.json 2>/dev/null || true
+# Discard local edits that block pull (script + PM2 secret rewrite, npm lock drift)
+git checkout -- scripts/fix-surabhi-whatsapp.sh whatsapp-bridge/ecosystem.config.cjs \
+  whatsapp-bridge/package.json whatsapp-bridge/package-lock.json 2>/dev/null || true
 git pull origin master
 
 # Keep PM2 secret in sync with Laravel .env
