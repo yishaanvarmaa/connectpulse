@@ -6,6 +6,8 @@ import makeWASocket, {
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     Browsers,
+    jidNormalizedUser,
+    isJidUser,
 } from '@whiskeysockets/baileys';
 import Pino from 'pino';
 import QRCode from 'qrcode';
@@ -14,7 +16,7 @@ import { config } from './config.js';
 const logger = Pino({ level: 'info' });
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY_MS = 3000;
-const MAX_STORED_MESSAGES = 200;
+const MAX_STORED_MESSAGES = 500;
 
 class MessageStore {
     constructor() {
@@ -30,7 +32,9 @@ class MessageStore {
             return;
         }
         this.messages.set(this.keyOf(key), message);
-        if (this.messages.size > MAX_STORED_MESSAGES) {
+        // Also index by id alone for some retry shapes
+        this.messages.set(key.id, message);
+        while (this.messages.size > MAX_STORED_MESSAGES) {
             const first = this.messages.keys().next().value;
             this.messages.delete(first);
         }
@@ -40,7 +44,7 @@ class MessageStore {
         if (!key?.id) {
             return undefined;
         }
-        return this.messages.get(this.keyOf(key));
+        return this.messages.get(this.keyOf(key)) || this.messages.get(key.id);
     }
 
     clear() {
@@ -66,8 +70,7 @@ class SessionManager {
     }
 
     getSessionPath(organizationId) {
-        const basePath = path.resolve(config.sessionsPath);
-        return path.join(basePath, String(organizationId));
+        return path.join(path.resolve(config.sessionsPath), String(organizationId));
     }
 
     ensureSessionDir(organizationId) {
@@ -127,9 +130,6 @@ class SessionManager {
         }
     }
 
-    /**
-     * Full crypto reset: logout, wipe auth files + message cache, require new QR.
-     */
     async resetCrypto(organizationId) {
         const id = String(organizationId);
         const session = this.sessions.get(id);
@@ -143,7 +143,7 @@ class SessionManager {
         }
 
         await this.teardownSession(id, true);
-        logger.info({ organizationId: id }, 'Crypto session fully reset — new QR required');
+        logger.info({ organizationId: id }, 'Crypto session fully reset');
 
         return { success: true, status: 'disconnected' };
     }
@@ -157,8 +157,7 @@ class SessionManager {
         const session = this.getSession(id);
 
         if (!session) {
-            const qr = this.qrCodes.get(id);
-            if (qr) {
+            if (this.qrCodes.get(id)) {
                 return { connected: false, phone: null, status: 'qr_required' };
             }
             if (this.hasSessionFiles(id)) {
@@ -168,35 +167,18 @@ class SessionManager {
         }
 
         if (session.connected) {
-            return {
-                connected: true,
-                phone: session.phone || null,
-                status: 'connected',
-            };
+            return { connected: true, phone: session.phone || null, status: 'connected' };
         }
 
         if (session.loggingIn) {
-            return {
-                connected: false,
-                phone: null,
-                status: 'logging_in',
-            };
+            return { connected: false, phone: null, status: 'logging_in' };
         }
 
-        const qr = this.qrCodes.get(id);
-        if (qr) {
-            return {
-                connected: false,
-                phone: null,
-                status: 'qr_required',
-            };
+        if (this.qrCodes.get(id)) {
+            return { connected: false, phone: null, status: 'qr_required' };
         }
 
-        return {
-            connected: false,
-            phone: null,
-            status: 'reconnecting',
-        };
+        return { connected: false, phone: null, status: 'reconnecting' };
     }
 
     getQr(organizationId) {
@@ -243,8 +225,14 @@ class SessionManager {
                 markOnlineOnConnect: false,
                 syncFullHistory: false,
                 generateHighQualityLinkPreview: false,
-                // Critical: WhatsApp retry receipts need the original plaintext
-                getMessage: async (key) => msgStore.get(key),
+                defaultQueryTimeoutMs: 60_000,
+                getMessage: async (key) => {
+                    const msg = msgStore.get(key);
+                    if (!msg) {
+                        logger.warn({ key }, 'getMessage miss — retry may fail');
+                    }
+                    return msg;
+                },
             });
 
             const sessionData = {
@@ -256,7 +244,6 @@ class SessionManager {
             };
 
             this.sessions.set(id, sessionData);
-
             sock.ev.on('creds.update', saveCreds);
 
             sock.ev.on('connection.update', async (update) => {
@@ -264,8 +251,7 @@ class SessionManager {
 
                 if (qr) {
                     try {
-                        const qrDataUrl = await QRCode.toDataURL(qr);
-                        this.qrCodes.set(id, qrDataUrl);
+                        this.qrCodes.set(id, await QRCode.toDataURL(qr));
                         sessionData.loggingIn = false;
                         this.reconnectAttempts.delete(id);
                         logger.info({ organizationId: id }, 'QR code ready');
@@ -286,8 +272,7 @@ class SessionManager {
                     sessionData.loggingIn = false;
                     this.qrCodes.delete(id);
                     this.reconnectAttempts.delete(id);
-                    const user = sock.user;
-                    sessionData.phone = user?.id?.split(':')[0] || null;
+                    sessionData.phone = sock.user?.id?.split(':')[0] || null;
                     logger.info({ organizationId: id, phone: sessionData.phone }, 'WhatsApp connected');
                 }
 
@@ -299,8 +284,7 @@ class SessionManager {
                     const loggedOut = statusCode === DisconnectReason.loggedOut;
                     const restartRequired = statusCode === DisconnectReason.restartRequired;
 
-                    logger.warn({ organizationId: id, statusCode, loggedOut, restartRequired }, 'WhatsApp connection closed');
-
+                    logger.warn({ organizationId: id, statusCode, loggedOut, restartRequired }, 'connection closed');
                     await this.teardownSocket(id);
 
                     if (loggedOut || statusCode === 401 || statusCode === 403) {
@@ -308,7 +292,6 @@ class SessionManager {
                         this.getMessageStore(id).clear();
                         this.qrCodes.delete(id);
                         this.reconnectAttempts.delete(id);
-                        logger.warn({ organizationId: id, statusCode }, 'Logged out — new QR required');
                         return;
                     }
 
@@ -316,7 +299,6 @@ class SessionManager {
                     this.reconnectAttempts.set(id, attempts);
 
                     if (attempts >= MAX_RECONNECT_ATTEMPTS) {
-                        logger.warn({ organizationId: id, attempts }, 'Max reconnect attempts — clearing session');
                         this.reconnectAttempts.delete(id);
                         this.clearSessionFiles(organizationId);
                         this.getMessageStore(id).clear();
@@ -324,8 +306,7 @@ class SessionManager {
                         return;
                     }
 
-                    const delay = restartRequired ? 1500 : RECONNECT_DELAY_MS;
-                    setTimeout(() => this.createSocket(id), delay);
+                    setTimeout(() => this.createSocket(id), restartRequired ? 1500 : RECONNECT_DELAY_MS);
                 }
             });
         } catch (err) {
@@ -338,6 +319,9 @@ class SessionManager {
 
     normalizeNumber(mobile) {
         let number = String(mobile).replace(/\D/g, '');
+        if (number.startsWith('0') && number.length === 11) {
+            number = '91' + number.slice(1);
+        }
         if (number.length === 10) {
             number = '91' + number;
         }
@@ -350,31 +334,70 @@ class SessionManager {
         try {
             const results = await sock.onWhatsApp(number);
             const match = Array.isArray(results) ? results.find((r) => r?.exists) : null;
-            if (match?.jid) {
-                return match.jid;
+
+            if (match) {
+                // Prefer LID when WhatsApp provides it (fixes many iOS decrypt placeholders)
+                const jid = match.lid || match.jid;
+                if (jid) {
+                    logger.info({ number, jid, hasLid: Boolean(match.lid) }, 'Resolved WhatsApp JID');
+                    return jidNormalizedUser(jid);
+                }
             }
         } catch (err) {
-            logger.warn({ err, mobile: number }, 'onWhatsApp lookup failed — falling back to PN jid');
+            logger.warn({ err, number }, 'onWhatsApp failed');
         }
 
-        return number + '@s.whatsapp.net';
+        return jidNormalizedUser(number + '@s.whatsapp.net');
+    }
+
+    async prepareSession(sock, jid) {
+        try {
+            if (typeof sock.assertSessions === 'function') {
+                await sock.assertSessions([jid], true);
+            }
+        } catch (err) {
+            logger.warn({ err, jid }, 'assertSessions failed — continuing send');
+        }
+
+        // Drop stale 1:1 signal session so a fresh ratchet is negotiated
+        try {
+            const signal = sock.signalRepository;
+            if (signal?.deleteSession && isJidUser(jid)) {
+                await signal.deleteSession(jid);
+                logger.info({ jid }, 'Cleared stale signal session before send');
+                if (typeof sock.assertSessions === 'function') {
+                    await sock.assertSessions([jid], true);
+                }
+            }
+        } catch (err) {
+            logger.warn({ err, jid }, 'Could not clear signal session');
+        }
     }
 
     async sendMessage(organizationId, mobile, message) {
         const id = String(organizationId);
         const session = this.getSession(id);
 
-        if (!session || !session.connected || !session.sock) {
+        if (!session?.connected || !session.sock) {
             return { success: false, error: 'WhatsApp is not connected.' };
         }
 
         try {
             const jid = await this.resolveJid(session.sock, mobile);
-            const content = { text: message };
+            await this.prepareSession(session.sock, jid);
+
+            const content = { text: String(message) };
             const result = await session.sock.sendMessage(jid, content);
 
             if (result?.key) {
                 this.getMessageStore(id).set(result.key, content);
+                // Also store under normalized remote jid variants for retries
+                if (result.key.remoteJid) {
+                    this.getMessageStore(id).set(
+                        { ...result.key, remoteJid: jidNormalizedUser(result.key.remoteJid) },
+                        content,
+                    );
+                }
             }
 
             logger.info({

@@ -100,8 +100,9 @@ class MessageService
             return;
         }
 
-        $connection = $organization->whatsappConnection;
-        if (! $connection?->isConnected()) {
+        // Live bridge status is source of truth (DB can be stale after crypto resets)
+        $live = $this->provider->getStatus($organization);
+        if (! ($live['connected'] ?? false)) {
             $log->update([
                 'status' => MessageLog::STATUS_FAILED,
                 'error_message' => 'WhatsApp not connected.',
