@@ -24,6 +24,8 @@ fi
 sed -i "s|BRIDGE_SECRET: '.*'|BRIDGE_SECRET: '${SECRET}'|" whatsapp-bridge/ecosystem.config.cjs
 
 cd whatsapp-bridge
+# Force clean install so Baileys 7 upgrades are not skipped
+rm -rf node_modules
 npm install --omit=dev
 pm2 delete connectpulse-bridge >/dev/null 2>&1 || true
 pm2 start ecosystem.config.cjs
@@ -72,9 +74,10 @@ QR=$(curl -sS -H "X-Bridge-Secret: ${SECRET}" "http://127.0.0.1:3001/qr?organiza
 if echo "$QR" | grep -q 'data:image'; then echo "QR: ready"; else echo "QR: $QR"; fi
 
 echo ""
-echo "NEXT:"
-echo "1) https://connectpulse.cloud/admin/organizations/1/whatsapp"
-echo "2) Ctrl+F5 → Connect → scan with Surabhi phone ONLY"
-echo "3) On phone: Linked devices → remove ALL other web/desktop devices first"
-echo "4) Wait until Connected, wait 30 more seconds, THEN send a test"
+echo "NEXT (Baileys 7 — MUST rescan QR, old sessions invalid):"
+echo "1) Phone: WhatsApp → Linked devices → remove ConnectPulse / all web sessions"
+echo "2) https://connectpulse.cloud/admin/organizations/1/whatsapp"
+echo "3) Ctrl+F5 → Connect → scan with Surabhi phone ONLY"
+echo "4) Wait until Connected + 30s, then send test to a DIFFERENT phone"
+echo "5) If still broken: ensure this number is NOT also linked to Meta Cloud API"
 echo "DONE"

@@ -7,6 +7,7 @@ import makeWASocket, {
     makeCacheableSignalKeyStore,
     Browsers,
     jidNormalizedUser,
+    jidEncode,
 } from '@whiskeysockets/baileys';
 import Pino from 'pino';
 import QRCode from 'qrcode';
@@ -16,6 +17,7 @@ const logger = Pino({ level: 'info' });
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY_MS = 3000;
 const MAX_STORED_MESSAGES = 500;
+const READY_GRACE_MS = 8_000;
 
 class MessageStore {
     constructor() {
@@ -31,7 +33,6 @@ class MessageStore {
             return;
         }
         this.messages.set(this.keyOf(key), message);
-        // Also index by id alone for some retry shapes
         this.messages.set(key.id, message);
         while (this.messages.size > MAX_STORED_MESSAGES) {
             const first = this.messages.keys().next().value;
@@ -229,6 +230,7 @@ class SessionManager {
                     const msg = msgStore.get(key);
                     if (!msg) {
                         logger.warn({ key }, 'getMessage miss — retry may fail');
+                        return undefined;
                     }
                     return msg;
                 },
@@ -240,6 +242,7 @@ class SessionManager {
                 loggingIn: false,
                 phone: null,
                 organizationId: id,
+                readyAt: 0,
             };
 
             this.sessions.set(id, sessionData);
@@ -269,6 +272,7 @@ class SessionManager {
                 if (connection === 'open') {
                     sessionData.connected = true;
                     sessionData.loggingIn = false;
+                    sessionData.readyAt = Date.now() + READY_GRACE_MS;
                     this.qrCodes.delete(id);
                     this.reconnectAttempts.delete(id);
                     sessionData.phone = sock.user?.id?.split(':')[0] || null;
@@ -278,6 +282,7 @@ class SessionManager {
                 if (connection === 'close') {
                     sessionData.connected = false;
                     sessionData.loggingIn = false;
+                    sessionData.readyAt = 0;
 
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
                     const loggedOut = statusCode === DisconnectReason.loggedOut;
@@ -329,36 +334,44 @@ class SessionManager {
 
     async resolveJid(sock, mobile) {
         const number = this.normalizeNumber(mobile);
+        const pnJid = jidEncode(number, 's.whatsapp.net');
 
         try {
-            const results = await sock.onWhatsApp(number);
+            const results = await sock.onWhatsApp(pnJid);
             const match = Array.isArray(results) ? results.find((r) => r?.exists) : null;
 
             if (match) {
-                // Use phone-number JID on Baileys 6.x. Preferring LID here without
-                // full LID support causes recipient "Waiting for this message…".
-                const jid = match.jid || match.lid;
-                if (jid) {
-                    logger.info({ number, jid, lid: match.lid || null }, 'Resolved WhatsApp JID');
-                    return jidNormalizedUser(jid);
+                // Baileys 7+: prefer LID when present (fixes PN/LID decrypt desync)
+                if (match.lid) {
+                    logger.info({ number, jid: match.lid, pn: match.jid || null }, 'Resolved WhatsApp LID');
+                    return match.lid;
                 }
+                const jid = match.jid || pnJid;
+                logger.info({ number, jid }, 'Resolved WhatsApp PN JID');
+                return jidNormalizedUser(jid);
             }
         } catch (err) {
             logger.warn({ err, number }, 'onWhatsApp failed');
         }
 
-        return jidNormalizedUser(number + '@s.whatsapp.net');
+        return pnJid;
     }
 
     async prepareSession(sock, jid) {
-        // Ensure encrypt session exists — do NOT delete sessions on every send
-        // (that recreates broken ratchets and causes "Waiting for this message…").
         try {
             if (typeof sock.assertSessions === 'function') {
                 await sock.assertSessions([jid], false);
             }
         } catch (err) {
             logger.warn({ err, jid }, 'assertSessions failed — continuing send');
+        }
+    }
+
+    async waitUntilReady(session) {
+        const waitMs = (session.readyAt || 0) - Date.now();
+        if (waitMs > 0) {
+            logger.info({ organizationId: session.organizationId, waitMs }, 'Waiting for post-connect sync before send');
+            await new Promise((resolve) => setTimeout(resolve, waitMs));
         }
     }
 
@@ -371,6 +384,8 @@ class SessionManager {
         }
 
         try {
+            await this.waitUntilReady(session);
+
             const jid = await this.resolveJid(session.sock, mobile);
             await this.prepareSession(session.sock, jid);
 
@@ -378,12 +393,13 @@ class SessionManager {
             const result = await session.sock.sendMessage(jid, content);
 
             if (result?.key) {
-                this.getMessageStore(id).set(result.key, content);
-                // Also store under normalized remote jid variants for retries
+                // Store proto content for getMessage retries (not the send shorthand)
+                const stored = result.message || content;
+                this.getMessageStore(id).set(result.key, stored);
                 if (result.key.remoteJid) {
                     this.getMessageStore(id).set(
                         { ...result.key, remoteJid: jidNormalizedUser(result.key.remoteJid) },
-                        content,
+                        stored,
                     );
                 }
             }
