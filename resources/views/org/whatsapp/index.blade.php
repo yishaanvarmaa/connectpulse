@@ -96,6 +96,12 @@ async function updateStatus() {
             return;
         }
 
+        if (data.status === 'logging_in') {
+            showHint('QR scanned — finishing login. Keep this page open (usually 10–30 seconds).');
+            startPolling(1500);
+            return;
+        }
+
         if (data.status === 'reconnecting') {
             showHint('Connection is unstable. Click Connect WhatsApp to scan a fresh QR code.');
             startPolling();

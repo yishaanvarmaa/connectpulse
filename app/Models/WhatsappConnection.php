@@ -15,6 +15,8 @@ class WhatsappConnection extends Model
 
     public const STATUS_RECONNECTING = 'reconnecting';
 
+    public const STATUS_LOGGING_IN = 'logging_in';
+
     protected $fillable = [
         'organization_id',
         'status',
@@ -55,6 +57,7 @@ class WhatsappConnection extends Model
 
         return match ($status) {
             self::STATUS_QR_REQUIRED, 'qr_required' => 'Scan QR to Connect',
+            self::STATUS_LOGGING_IN, 'logging_in' => 'Logging in…',
             self::STATUS_RECONNECTING, 'reconnecting' => 'Reconnect Required',
             default => 'Disconnected',
         };

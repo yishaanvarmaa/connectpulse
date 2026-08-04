@@ -4,14 +4,15 @@ import makeWASocket, {
     DisconnectReason,
     useMultiFileAuthState,
     fetchLatestBaileysVersion,
+    Browsers,
 } from '@whiskeysockets/baileys';
 import Pino from 'pino';
 import QRCode from 'qrcode';
 import { config } from './config.js';
 
-const logger = Pino({ level: 'warn' });
-const MAX_RECONNECT_ATTEMPTS = 3;
-const RECONNECT_DELAY_MS = 5000;
+const logger = Pino({ level: 'info' });
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY_MS = 3000;
 
 class SessionManager {
     constructor() {
@@ -41,7 +42,19 @@ class SessionManager {
         }
     }
 
-    async teardownSession(organizationId, clearFiles = false) {
+    hasSessionFiles(organizationId) {
+        const sessionPath = this.getSessionPath(organizationId);
+        if (!fs.existsSync(sessionPath)) {
+            return false;
+        }
+        try {
+            return fs.readdirSync(sessionPath).length > 0;
+        } catch {
+            return false;
+        }
+    }
+
+    async teardownSocket(organizationId) {
         const id = String(organizationId);
         const session = this.sessions.get(id);
 
@@ -56,9 +69,14 @@ class SessionManager {
         }
 
         this.sessions.delete(id);
+        this.connecting.delete(id);
+    }
+
+    async teardownSession(organizationId, clearFiles = false) {
+        const id = String(organizationId);
+        await this.teardownSocket(id);
         this.qrCodes.delete(id);
         this.reconnectAttempts.delete(id);
-        this.connecting.delete(id);
 
         if (clearFiles) {
             this.clearSessionFiles(organizationId);
@@ -75,11 +93,13 @@ class SessionManager {
 
         if (!session) {
             const qr = this.qrCodes.get(id);
-            return {
-                connected: false,
-                phone: null,
-                status: qr ? 'qr_required' : 'disconnected',
-            };
+            if (qr) {
+                return { connected: false, phone: null, status: 'qr_required' };
+            }
+            if (this.hasSessionFiles(id)) {
+                return { connected: false, phone: null, status: 'reconnecting' };
+            }
+            return { connected: false, phone: null, status: 'disconnected' };
         }
 
         if (session.connected) {
@@ -87,6 +107,14 @@ class SessionManager {
                 connected: true,
                 phone: session.phone || null,
                 status: 'connected',
+            };
+        }
+
+        if (session.loggingIn) {
+            return {
+                connected: false,
+                phone: null,
+                status: 'logging_in',
             };
         }
 
@@ -117,6 +145,7 @@ class SessionManager {
             return { success: true, status: 'connected' };
         }
 
+        // Fresh connect: clear old auth so a new QR is issued
         await this.teardownSession(id, true);
         await this.createSocket(id);
 
@@ -142,13 +171,17 @@ class SessionManager {
                 auth: state,
                 logger,
                 printQRInTerminal: false,
-                generateHighQualityLinkPreview: false,
+                browser: Browsers.ubuntu('Chrome'),
+                markOnlineOnConnect: false,
                 syncFullHistory: false,
+                generateHighQualityLinkPreview: false,
+                getMessage: async () => undefined,
             });
 
             const sessionData = {
                 sock,
                 connected: false,
+                loggingIn: false,
                 phone: null,
                 organizationId: id,
             };
@@ -164,34 +197,56 @@ class SessionManager {
                     try {
                         const qrDataUrl = await QRCode.toDataURL(qr);
                         this.qrCodes.set(id, qrDataUrl);
+                        sessionData.loggingIn = false;
                         this.reconnectAttempts.delete(id);
+                        logger.info({ organizationId: id }, 'QR code ready');
                     } catch (err) {
                         logger.error({ err }, 'Failed to generate QR code');
                     }
                 }
 
+                if (connection === 'connecting') {
+                    // After QR scan WhatsApp often sits here briefly
+                    if (!this.qrCodes.has(id) || this.hasSessionFiles(id)) {
+                        sessionData.loggingIn = true;
+                        this.qrCodes.delete(id);
+                    }
+                }
+
                 if (connection === 'open') {
                     sessionData.connected = true;
+                    sessionData.loggingIn = false;
                     this.qrCodes.delete(id);
                     this.reconnectAttempts.delete(id);
                     const user = sock.user;
                     sessionData.phone = user?.id?.split(':')[0] || null;
+                    logger.info({ organizationId: id, phone: sessionData.phone }, 'WhatsApp connected');
                 }
 
                 if (connection === 'close') {
                     sessionData.connected = false;
+                    sessionData.loggingIn = false;
+
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
                     const loggedOut = statusCode === DisconnectReason.loggedOut;
                     const restartRequired = statusCode === DisconnectReason.restartRequired;
-                    const badSession = loggedOut || restartRequired || statusCode === 401 || statusCode === 403;
 
-                    await this.teardownSession(id, badSession);
+                    logger.warn({ organizationId: id, statusCode, loggedOut, restartRequired }, 'WhatsApp connection closed');
 
-                    if (badSession) {
-                        logger.warn({ organizationId: id, statusCode }, 'Session invalid — QR required');
+                    // Close socket only — do NOT wipe auth on restartRequired.
+                    // After QR scan Baileys often closes with 515 restartRequired;
+                    // clearing files here causes endless "Logging in…" hang.
+                    await this.teardownSocket(id);
+
+                    if (loggedOut || statusCode === 401 || statusCode === 403) {
+                        this.clearSessionFiles(organizationId);
+                        this.qrCodes.delete(id);
+                        this.reconnectAttempts.delete(id);
+                        logger.warn({ organizationId: id, statusCode }, 'Logged out — new QR required');
                         return;
                     }
 
+                    // restartRequired / transient close: reconnect keeping creds
                     const attempts = (this.reconnectAttempts.get(id) || 0) + 1;
                     this.reconnectAttempts.set(id, attempts);
 
@@ -199,15 +254,17 @@ class SessionManager {
                         logger.warn({ organizationId: id, attempts }, 'Max reconnect attempts — clearing session');
                         this.reconnectAttempts.delete(id);
                         this.clearSessionFiles(organizationId);
+                        this.qrCodes.delete(id);
                         return;
                     }
 
-                    setTimeout(() => this.createSocket(id), RECONNECT_DELAY_MS);
+                    const delay = restartRequired ? 1500 : RECONNECT_DELAY_MS;
+                    setTimeout(() => this.createSocket(id), delay);
                 }
             });
         } catch (err) {
             logger.error({ err, organizationId: id }, 'Failed to create WhatsApp socket');
-            await this.teardownSession(id, false);
+            await this.teardownSocket(id);
         } finally {
             this.connecting.delete(id);
         }

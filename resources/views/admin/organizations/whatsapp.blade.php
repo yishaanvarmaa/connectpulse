@@ -91,6 +91,12 @@ async function updateStatus() {
             return;
         }
 
+        if (data.status === 'logging_in') {
+            showHint('QR scanned — finishing login. Keep this page open (usually 10–30 seconds).');
+            startPolling(1500);
+            return;
+        }
+
         if (data.status === 'reconnecting') {
             showHint('Session is stuck. Click Generate QR / Connect for a fresh link.');
             startPolling();
