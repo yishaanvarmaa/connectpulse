@@ -62,6 +62,15 @@ app.post('/disconnect', async (req, res) => {
     res.json(result);
 });
 
+app.post('/reset-crypto', async (req, res) => {
+    const { organization_id } = req.body;
+    if (!organization_id) {
+        return res.status(400).json({ success: false, error: 'organization_id is required' });
+    }
+    const result = await sessionManager.resetCrypto(organization_id);
+    res.json(result);
+});
+
 app.listen(config.port, config.host, () => {
     console.log(`ConnectPulse WhatsApp Bridge running on ${config.host}:${config.port}`);
 });

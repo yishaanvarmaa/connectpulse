@@ -93,6 +93,24 @@ class WhatsAppConnectionService
         $this->messageService->provider()->disconnect($organization);
     }
 
+    public function resetCrypto(Organization $organization): array
+    {
+        $result = $this->bridgeService->resetCrypto((int) $organization->id);
+
+        if ($connection = $organization->whatsappConnection) {
+            $connection->update([
+                'status' => WhatsappConnection::STATUS_DISCONNECTED,
+                'phone_number' => null,
+                'disconnected_at' => now(),
+            ]);
+        }
+
+        return [
+            'success' => (bool) ($result['success'] ?? false),
+            'error' => $result['error'] ?? null,
+        ];
+    }
+
     public function isConnected(Organization $organization): bool
     {
         $status = $this->getStatus($organization);

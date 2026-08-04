@@ -71,6 +71,13 @@ class WhatsAppBridgeService
         ]);
     }
 
+    public function resetCrypto(int $organizationId): array
+    {
+        return $this->request('POST', '/reset-crypto', [
+            'organization_id' => $organizationId,
+        ]);
+    }
+
     public function initSession(int $organizationId): array
     {
         return $this->request('POST', '/init', [
