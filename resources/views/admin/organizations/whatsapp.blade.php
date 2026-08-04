@@ -29,6 +29,7 @@
         <div class="inline-block p-4 bg-white border border-slate-200 rounded-lg">
             <img id="qr-image" src="" alt="WhatsApp QR Code" class="w-64 h-64">
         </div>
+        <p class="text-xs text-slate-400 mt-3">WhatsApp → Linked Devices → Link a Device. If QR expires, click Generate again.</p>
     </div>
 
     <div class="flex gap-3">
@@ -58,8 +59,15 @@ function showHint(message) {
     else { el.classList.add('hidden'); }
 }
 
-function startPolling() {
-    if (!pollInterval) pollInterval = setInterval(async () => { await fetchQr(); await updateStatus(); }, 3000);
+function showQr(dataUrl) {
+    if (!dataUrl) return;
+    document.getElementById('qr-container').classList.remove('hidden');
+    document.getElementById('qr-image').src = dataUrl;
+}
+
+function startPolling(ms = 2000) {
+    stopPolling();
+    pollInterval = setInterval(async () => { await fetchQr(); await updateStatus(); }, ms);
 }
 
 function stopPolling() {
@@ -67,48 +75,73 @@ function stopPolling() {
 }
 
 async function updateStatus() {
-    const res = await fetch('{{ route('admin.organizations.whatsapp.status', $organization) }}');
-    const data = await res.json();
-    document.getElementById('connection-status').textContent = data.display_status || data.status;
-    document.getElementById('connected-phone').textContent = data.connected ? formatPhone(data.phone) : '';
-    document.getElementById('connected-at').textContent = data.connected ? formatConnectedAt(data.connected_at) : '';
-    document.getElementById('status-indicator').className = 'h-3 w-3 rounded-full ' + (data.connected ? 'bg-green-500' : 'bg-slate-300');
-    document.getElementById('btn-disconnect').classList.toggle('hidden', !data.connected);
+    try {
+        const res = await fetch('{{ route('admin.organizations.whatsapp.status', $organization) }}');
+        const data = await res.json();
+        document.getElementById('connection-status').textContent = data.display_status || data.status;
+        document.getElementById('connected-phone').textContent = data.connected ? formatPhone(data.phone) : '';
+        document.getElementById('connected-at').textContent = data.connected ? formatConnectedAt(data.connected_at) : '';
+        document.getElementById('status-indicator').className = 'h-3 w-3 rounded-full ' + (data.connected ? 'bg-green-500' : 'bg-slate-300');
+        document.getElementById('btn-disconnect').classList.toggle('hidden', !data.connected);
 
-    if (data.connected) {
-        document.getElementById('qr-container').classList.add('hidden');
-        showHint('');
-        stopPolling();
-        return;
-    }
+        if (data.connected) {
+            document.getElementById('qr-container').classList.add('hidden');
+            showHint('');
+            stopPolling();
+            return;
+        }
 
-    if (data.status === 'reconnecting') {
-        showHint('Session is stuck. Click Generate QR / Connect for a fresh link.');
-        startPolling();
-        return;
-    }
+        if (data.status === 'reconnecting') {
+            showHint('Session is stuck. Click Generate QR / Connect for a fresh link.');
+            startPolling();
+            return;
+        }
 
-    if (data.needs_qr) {
-        showHint('Scan the QR code to connect.');
-        startPolling();
+        if (data.needs_qr) {
+            showHint('Scan the QR code to connect.');
+            startPolling();
+        }
+    } catch (e) {
+        showHint('Could not reach WhatsApp status.');
     }
 }
 
 async function fetchQr() {
-    const res = await fetch('{{ route('admin.organizations.whatsapp.qr', $organization) }}');
-    const data = await res.json();
-    if (data.qr) {
-        document.getElementById('qr-container').classList.remove('hidden');
-        document.getElementById('qr-image').src = data.qr;
-    }
+    try {
+        const res = await fetch('{{ route('admin.organizations.whatsapp.qr', $organization) }}');
+        const data = await res.json();
+        if (data.qr) showQr(data.qr);
+    } catch (e) {}
 }
 
 document.getElementById('btn-connect').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-connect');
+    btn.disabled = true;
     stopPolling();
-    await fetch('{{ route('admin.organizations.whatsapp.connect', $organization) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf } });
+    showHint('Generating QR code… please wait.');
     document.getElementById('connection-status').textContent = 'Scan QR to Connect';
-    await fetchQr();
-    startPolling();
+
+    try {
+        const res = await fetch('{{ route('admin.organizations.whatsapp.connect', $organization) }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        });
+        const data = await res.json();
+        if (data.qr) {
+            showQr(data.qr);
+            showHint('Scan the QR code to connect.');
+        } else if (data.error) {
+            showHint(data.error);
+        } else {
+            showHint('Waiting for QR… keep this page open.');
+        }
+        startPolling(1500);
+        await fetchQr();
+    } catch (e) {
+        showHint('Connect failed. Try again.');
+    } finally {
+        btn.disabled = false;
+    }
 });
 
 document.getElementById('btn-disconnect').addEventListener('click', async () => {

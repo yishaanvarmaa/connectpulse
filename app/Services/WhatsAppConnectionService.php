@@ -21,7 +21,7 @@ class WhatsAppConnectionService
         ]);
     }
 
-    public function connect(Organization $organization): void
+    public function connect(Organization $organization): array
     {
         $liveStatus = $this->messageService->provider()->getStatus($organization);
 
@@ -31,8 +31,39 @@ class WhatsAppConnectionService
 
         $connection = $this->ensureConnection($organization);
 
-        $this->bridgeService->initSession((int) $organization->id);
-        $connection->update(['status' => WhatsappConnection::STATUS_QR_REQUIRED]);
+        $init = $this->bridgeService->initSession((int) $organization->id);
+
+        if (($init['success'] ?? false) === false) {
+            $connection->update(['status' => WhatsappConnection::STATUS_DISCONNECTED]);
+
+            return [
+                'success' => false,
+                'error' => $init['error'] ?? 'WhatsApp bridge failed to start. Contact support.',
+                'qr' => null,
+            ];
+        }
+
+        $qr = null;
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            usleep(500000);
+            $qrResult = $this->bridgeService->getQr((int) $organization->id);
+            if (! empty($qrResult['qr'])) {
+                $qr = $qrResult['qr'];
+                break;
+            }
+        }
+
+        $connection->update([
+            'status' => $qr
+                ? WhatsappConnection::STATUS_QR_REQUIRED
+                : WhatsappConnection::STATUS_QR_REQUIRED,
+        ]);
+
+        return [
+            'success' => true,
+            'error' => $qr ? null : 'QR is generating — wait a few seconds and keep this page open.',
+            'qr' => $qr,
+        ];
     }
 
     public function getQr(Organization $organization): ?string

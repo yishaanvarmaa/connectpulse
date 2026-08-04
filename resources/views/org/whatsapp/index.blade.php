@@ -28,6 +28,7 @@
                 <img id="qr-image" src="" alt="WhatsApp QR Code" class="w-64 h-64">
             </div>
             <p class="text-xs text-slate-400 mt-3">Open WhatsApp → Linked Devices → Link a Device</p>
+            <p class="text-xs text-slate-400 mt-1">QR refreshes automatically. If it expires, click Connect again.</p>
         </div>
 
         <div class="flex gap-3">
@@ -57,13 +58,18 @@ function showHint(message) {
     }
 }
 
-function startPolling() {
-    if (!pollInterval) {
-        pollInterval = setInterval(async () => {
-            await fetchQr();
-            await updateStatus();
-        }, 3000);
-    }
+function showQr(dataUrl) {
+    if (!dataUrl) return;
+    document.getElementById('qr-container').classList.remove('hidden');
+    document.getElementById('qr-image').src = dataUrl;
+}
+
+function startPolling(ms = 2000) {
+    stopPolling();
+    pollInterval = setInterval(async () => {
+        await fetchQr();
+        await updateStatus();
+    }, ms);
 }
 
 function stopPolling() {
@@ -74,52 +80,80 @@ function stopPolling() {
 }
 
 async function updateStatus() {
-    const res = await fetch('{{ route('org.whatsapp.status') }}');
-    const data = await res.json();
+    try {
+        const res = await fetch('{{ route('org.whatsapp.status') }}');
+        const data = await res.json();
 
-    document.getElementById('connection-status').textContent = data.display_status || data.status;
-    document.getElementById('connected-phone').textContent = data.connected ? formatPhone(data.phone) : '';
-    document.getElementById('status-indicator').className = 'h-3 w-3 rounded-full ' + (data.connected ? 'bg-green-500' : 'bg-slate-300');
-    document.getElementById('btn-disconnect').classList.toggle('hidden', !data.connected);
+        document.getElementById('connection-status').textContent = data.display_status || data.status;
+        document.getElementById('connected-phone').textContent = data.connected ? formatPhone(data.phone) : '';
+        document.getElementById('status-indicator').className = 'h-3 w-3 rounded-full ' + (data.connected ? 'bg-green-500' : 'bg-slate-300');
+        document.getElementById('btn-disconnect').classList.toggle('hidden', !data.connected);
 
-    if (data.connected) {
-        document.getElementById('qr-container').classList.add('hidden');
-        showHint('');
-        stopPolling();
-        return;
+        if (data.connected) {
+            document.getElementById('qr-container').classList.add('hidden');
+            showHint('');
+            stopPolling();
+            return;
+        }
+
+        if (data.status === 'reconnecting') {
+            showHint('Connection is unstable. Click Connect WhatsApp to scan a fresh QR code.');
+            startPolling();
+            return;
+        }
+
+        if (data.needs_qr || data.status === 'qr_required') {
+            showHint('Scan the QR code below to link your WhatsApp number.');
+            startPolling();
+        }
+    } catch (e) {
+        showHint('Could not reach WhatsApp status. Refresh the page and try again.');
     }
-
-    if (data.status === 'reconnecting') {
-        showHint('Connection is unstable. Click Connect WhatsApp to scan a fresh QR code.');
-        startPolling();
-        return;
-    }
-
-    if (data.needs_qr || data.status === 'qr_required') {
-        showHint('Scan the QR code below to link your WhatsApp number.');
-        startPolling();
-        return;
-    }
-
-    showHint('');
 }
 
 async function fetchQr() {
-    const res = await fetch('{{ route('org.whatsapp.qr') }}');
-    const data = await res.json();
-    if (data.qr) {
-        document.getElementById('qr-container').classList.remove('hidden');
-        document.getElementById('qr-image').src = data.qr;
+    try {
+        const res = await fetch('{{ route('org.whatsapp.qr') }}');
+        const data = await res.json();
+        if (data.qr) {
+            showQr(data.qr);
+            showHint('Scan the QR code below to link your WhatsApp number.');
+        }
+    } catch (e) {
+        showHint('Could not load QR code. Click Connect WhatsApp again.');
     }
 }
 
 document.getElementById('btn-connect').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-connect');
+    btn.disabled = true;
     stopPolling();
-    await fetch('{{ route('org.whatsapp.connect') }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf } });
+    showHint('Generating QR code… please wait.');
     document.getElementById('connection-status').textContent = 'Scan QR to Connect';
-    showHint('Generating QR code…');
-    await fetchQr();
-    startPolling();
+
+    try {
+        const res = await fetch('{{ route('org.whatsapp.connect') }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        });
+        const data = await res.json();
+
+        if (data.qr) {
+            showQr(data.qr);
+            showHint('Scan the QR code below to link your WhatsApp number.');
+        } else if (data.error) {
+            showHint(data.error);
+        } else {
+            showHint('Waiting for QR… keep this page open.');
+        }
+
+        startPolling(1500);
+        await fetchQr();
+    } catch (e) {
+        showHint('Connect failed. Refresh and try again, or contact support.');
+    } finally {
+        btn.disabled = false;
+    }
 });
 
 document.getElementById('btn-disconnect').addEventListener('click', async () => {
