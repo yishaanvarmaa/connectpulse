@@ -41,6 +41,8 @@ chmod -R 775 storage/app/whatsapp
 
 echo "==> Restart bridge + clear Laravel config cache"
 cd whatsapp-bridge
+rm -rf node_modules
+npm install --omit=dev
 pm2 delete connectpulse-bridge >/dev/null 2>&1 || true
 pm2 start ecosystem.config.cjs
 pm2 save
@@ -48,7 +50,7 @@ cd "$APP_DIR"
 php artisan config:clear
 php artisan config:cache
 
-sleep 2
+sleep 3
 
 echo "==> Health / auth test"
 SECRET=$(grep '^WHATSAPP_BRIDGE_SECRET=' .env | cut -d= -f2- | tr -d '"' | tr -d "'")
@@ -57,19 +59,17 @@ curl -sS -o /tmp/cp-bridge-health.json -w "HTTP %{http_code}\n" \
   "http://127.0.0.1:3001/health" || true
 cat /tmp/cp-bridge-health.json 2>/dev/null; echo
 
-echo "==> Init session for org 1 (QR probe)"
-curl -sS -H "X-Bridge-Secret: ${SECRET}" -H "Content-Type: application/json" \
-  -d '{"organization_id":1}' \
-  "http://127.0.0.1:3001/init" || true
-echo
-echo "Waiting 5s for QR..."
-sleep 5
+echo "==> Init session probe (does not wipe — uses restore path via status)"
 curl -sS -H "X-Bridge-Secret: ${SECRET}" \
-  "http://127.0.0.1:3001/qr?organization_id=1" | head -c 200
+  "http://127.0.0.1:3001/status?organization_id=1" || true
 echo
+echo "Waiting 5s for any restore..."
+sleep 5
 curl -sS -H "X-Bridge-Secret: ${SECRET}" \
   "http://127.0.0.1:3001/status?organization_id=1"
 echo
 echo "==> Recent bridge logs"
 pm2 logs connectpulse-bridge --lines 30 --nostream || true
-echo "DONE — open /whatsapp in the portal and click Connect WhatsApp"
+echo "DONE — existing sessions auto-restore; new orgs use Connect QR in portal"
+echo "Per-org reset: bash scripts/fix-org-whatsapp.sh <id>"
+echo "Migrate others to Baileys 7: bash scripts/migrate-orgs-baileys7.sh"

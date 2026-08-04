@@ -71,6 +71,12 @@ app.post('/reset-crypto', async (req, res) => {
     res.json(result);
 });
 
-app.listen(config.port, config.host, () => {
+app.listen(config.port, config.host, async () => {
     console.log(`ConnectPulse WhatsApp Bridge running on ${config.host}:${config.port}`);
+    try {
+        await sessionManager.restoreAllSessions();
+        console.log('Existing WhatsApp sessions restore started for all organizations');
+    } catch (err) {
+        console.error('Failed to restore WhatsApp sessions:', err);
+    }
 });

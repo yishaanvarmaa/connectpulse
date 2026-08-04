@@ -100,6 +100,58 @@ class SessionManager {
         }
     }
 
+    hasAuthCreds(organizationId) {
+        return fs.existsSync(path.join(this.getSessionPath(organizationId), 'creds.json'));
+    }
+
+    /**
+     * Reconnect an existing auth session without wiping files (used on boot / after PM2 restart).
+     */
+    async restoreSession(organizationId) {
+        const id = String(organizationId);
+
+        if (this.sessions.has(id) && this.sessions.get(id).connected) {
+            return { success: true, status: 'connected' };
+        }
+
+        if (!this.hasAuthCreds(id)) {
+            return { success: false, status: 'disconnected' };
+        }
+
+        if (this.connecting.has(id) || this.sessions.has(id)) {
+            return { success: true, status: 'reconnecting' };
+        }
+
+        await this.createSocket(id);
+        return { success: true, status: 'reconnecting' };
+    }
+
+    /**
+     * Restore every org that has saved WhatsApp credentials.
+     */
+    async restoreAllSessions() {
+        const root = path.resolve(config.sessionsPath);
+        if (!fs.existsSync(root)) {
+            return;
+        }
+
+        const entries = fs.readdirSync(root, { withFileTypes: true })
+            .filter((d) => d.isDirectory())
+            .map((d) => d.name);
+
+        for (const orgId of entries) {
+            if (!this.hasAuthCreds(orgId)) {
+                continue;
+            }
+            try {
+                logger.info({ organizationId: orgId }, 'Restoring WhatsApp session on startup');
+                await this.restoreSession(orgId);
+            } catch (err) {
+                logger.error({ err, organizationId: orgId }, 'Failed to restore session');
+            }
+        }
+    }
+
     async teardownSocket(organizationId) {
         const id = String(organizationId);
         const session = this.sessions.get(id);
@@ -159,6 +211,13 @@ class SessionManager {
         if (!session) {
             if (this.qrCodes.get(id)) {
                 return { connected: false, phone: null, status: 'qr_required' };
+            }
+            if (this.hasAuthCreds(id)) {
+                // Kick restore so status polls / PM2 restarts revive all orgs
+                this.restoreSession(id).catch((err) => {
+                    logger.error({ err, organizationId: id }, 'Background restore failed');
+                });
+                return { connected: false, phone: null, status: 'reconnecting' };
             }
             if (this.hasSessionFiles(id)) {
                 return { connected: false, phone: null, status: 'reconnecting' };
