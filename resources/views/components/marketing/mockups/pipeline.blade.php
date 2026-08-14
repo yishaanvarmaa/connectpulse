@@ -1,26 +1,34 @@
-<x-marketing.browser-frame>
-    <div class="p-4">
-        <div class="mb-3 flex items-baseline justify-between">
-            <p class="text-xs font-semibold text-slate-900">Pipeline</p>
-            <p class="text-sm font-bold text-slate-900">₹1.24L</p>
-        </div>
-        <div class="flex gap-2 overflow-x-auto pb-1">
-            @foreach([
-                ['New', 4, 'bg-slate-500', 'bg-slate-200'],
-                ['Contacted', 6, 'bg-blue-500', 'bg-blue-200'],
-                ['Interested', 3, 'bg-violet-500', 'bg-violet-200'],
-                ['Demo', 2, 'bg-amber-500', 'bg-amber-200'],
-                ['Negotiation', 2, 'bg-orange-500', 'bg-orange-200'],
-                ['Won', 5, 'bg-emerald-500', 'bg-emerald-200'],
-            ] as [$stage, $count, $bar, $track])
-                <div class="min-w-[72px] shrink-0 rounded-xl border border-slate-200 bg-white p-2">
-                    <p class="text-[9px] font-medium text-slate-500">{{ $stage }}</p>
-                    <p class="text-lg font-bold text-slate-900">{{ $count }}</p>
-                    <div class="mt-1 h-1 rounded-full {{ $track }}">
-                        <div class="h-1 rounded-full {{ $bar }}" style="width: {{ min(100, $count * 15) }}%"></div>
+<div class="relative">
+    <x-marketing.browser-frame url="connectpulse.cloud/crm/pipeline" class="w-full">
+        <div class="p-4 sm:p-5">
+            <div class="mb-4 flex items-baseline justify-between">
+                <p class="text-sm font-bold text-white">Sales Pipeline</p>
+                <p class="text-2xl font-bold text-[#8b7cff]">₹1.24L</p>
+            </div>
+            <div class="flex gap-2 overflow-x-auto pb-2">
+                @foreach([
+                    ['New', [['Anita', '₹8K'], ['Rohit', '₹12K']], 'border-slate-500/30'],
+                    ['Contacted', [['Kavita', '₹15K']], 'border-blue-500/30'],
+                    ['Interested', [['Priya', '₹18K'], ['Suresh', '₹22K']], 'border-violet-500/30'],
+                    ['Demo', [['Amit', '₹24K']], 'border-amber-500/30'],
+                    ['Negotiation', [['Ravi', '₹25K']], 'border-orange-500/30'],
+                    ['Won', [['Neha', '₹30K']], 'border-emerald-500/30'],
+                ] as [$stage, $cards, $border])
+                    <div class="mkt-kanban-col min-w-[100px] {{ $border }}">
+                        <p class="mb-2 px-1 text-[9px] font-bold uppercase text-slate-500">{{ $stage }}</p>
+                        @foreach($cards as [$name, $val])
+                            <div class="mkt-kanban-card">
+                                <p class="font-semibold text-white">{{ $name }}</p>
+                                <p class="text-[#8b7cff]">{{ $val }}</p>
+                            </div>
+                        @endforeach
                     </div>
-                </div>
-            @endforeach
+                @endforeach
+            </div>
         </div>
+    </x-marketing.browser-frame>
+    <div class="mkt-float-card--light absolute -bottom-4 -left-2 sm:-left-6 rounded-2xl px-5 py-4 sm:px-6">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pipeline</p>
+        <p class="text-3xl font-extrabold text-slate-900">₹1.24L</p>
     </div>
-</x-marketing.browser-frame>
+</div>

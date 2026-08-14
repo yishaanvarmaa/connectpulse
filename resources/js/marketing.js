@@ -18,23 +18,45 @@ function initMarketingReveal() {
                 }
             });
         },
-        { threshold: 0.12, rootMargin: '0px 0px -40px 0px' },
+        { threshold: 0.08, rootMargin: '0px 0px -32px 0px' },
     );
 
     document.querySelectorAll('.mkt-reveal').forEach((el) => observer.observe(el));
 }
 
 function initMarketingNav() {
+    const nav = document.getElementById('mkt-nav');
     const toggle = document.getElementById('mkt-nav-toggle');
     const panel = document.getElementById('mkt-nav-mobile');
-    if (!toggle || !panel) return;
+    if (!nav) return;
 
-    toggle.addEventListener('click', () => {
-        panel.classList.toggle('is-open');
-        toggle.setAttribute('aria-expanded', panel.classList.contains('is-open'));
+    const lightSections = document.querySelectorAll('[data-nav-light]');
+    const darkThreshold = 80;
+
+    const updateNav = () => {
+        let useLight = false;
+        lightSections.forEach((section) => {
+            const rect = section.getBoundingClientRect();
+            if (rect.top <= darkThreshold && rect.bottom > darkThreshold) {
+                useLight = true;
+            }
+        });
+        if (!lightSections.length && window.scrollY > 400) {
+            useLight = true;
+        }
+        nav.classList.toggle('mkt-nav--light', useLight);
+        nav.classList.toggle('mkt-nav--dark', !useLight);
+    };
+
+    window.addEventListener('scroll', updateNav, { passive: true });
+    updateNav();
+
+    toggle?.addEventListener('click', () => {
+        panel?.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', panel?.classList.contains('is-open') ? 'true' : 'false');
     });
 
-    panel.querySelectorAll('a').forEach((link) => {
+    panel?.querySelectorAll('a').forEach((link) => {
         link.addEventListener('click', () => panel.classList.remove('is-open'));
     });
 }

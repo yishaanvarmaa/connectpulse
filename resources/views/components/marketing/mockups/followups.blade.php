@@ -1,24 +1,29 @@
-<x-marketing.browser-frame>
-    <div class="p-4">
-        <div class="mb-3 flex items-center justify-between">
-            <p class="text-xs font-semibold text-slate-900">Follow-ups</p>
-            <span class="text-[10px] text-red-600 font-medium">3 overdue</span>
+<x-marketing.browser-frame :light="true" url="connectpulse.cloud/crm/follow-ups" class="w-full">
+    <div class="p-4 sm:p-5">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <p class="text-sm font-bold text-slate-900">Follow-ups</p>
+            <div class="flex gap-2">
+                <span class="rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-bold text-red-700">3 overdue</span>
+                <span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700">5 today</span>
+            </div>
         </div>
-        <div class="space-y-2">
-            @foreach([
-                ['Priya Sharma', '10:30 AM', 'Demo', 'overdue'],
-                ['Amit Patel', '2:00 PM', 'Call', 'today'],
-                ['Neha Singh', 'Tomorrow', 'WhatsApp', 'upcoming'],
-            ] as [$name, $time, $type, $status])
-                <div class="flex items-center gap-2 rounded-lg border {{ $status === 'overdue' ? 'border-red-200 bg-red-50/50' : ($status === 'today' ? 'border-amber-200 bg-amber-50/30' : 'border-slate-200 bg-white') }} px-3 py-2">
-                    <span class="w-14 shrink-0 text-[10px] font-medium text-slate-500">{{ $time }}</span>
-                    <div class="min-w-0 flex-1">
-                        <p class="truncate text-xs font-medium text-slate-900">{{ $name }}</p>
-                        <p class="text-[10px] text-slate-500">{{ $type }}</p>
-                    </div>
-                    <span class="rounded-md bg-brand-600 px-2 py-0.5 text-[9px] font-medium text-white">Done</span>
+        @foreach([
+            ['Ravi Kumar', '10:30 AM', 'Call', '₹24,999', 'border-red-200 bg-red-50'],
+            ['Priya Sharma', '2:00 PM', 'Demo', '₹18,500', 'border-amber-200 bg-amber-50/80'],
+            ['Amit Patel', 'Tomorrow', 'WhatsApp', '₹12,000', 'border-slate-200 bg-white'],
+        ] as [$name, $time, $type, $val, $cls])
+            <div class="mb-2 flex items-center gap-3 rounded-xl border {{ $cls }} px-3 py-3">
+                <span class="w-16 shrink-0 text-[10px] font-semibold text-slate-500">{{ $time }}</span>
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-semibold text-slate-900">{{ $name }}</p>
+                    <p class="text-[10px] text-slate-500">{{ $type }}</p>
                 </div>
-            @endforeach
-        </div>
+                <span class="text-xs font-bold text-slate-800">{{ $val }}</span>
+                <div class="hidden gap-1 sm:flex">
+                    <span class="rounded-md bg-emerald-600 px-2 py-1 text-[9px] font-medium text-white">WA</span>
+                    <span class="rounded-md bg-[#635bff] px-2 py-1 text-[9px] font-medium text-white">Done</span>
+                </div>
+            </div>
+        @endforeach
     </div>
 </x-marketing.browser-frame>

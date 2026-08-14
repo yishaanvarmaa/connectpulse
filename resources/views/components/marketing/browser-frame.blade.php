@@ -1,13 +1,13 @@
-@props(['title' => 'ConnectPulse'])
+@props(['light' => false, 'url' => 'connectpulse.cloud/dashboard'])
 
-<div {{ $attributes->merge(['class' => 'mkt-browser']) }}>
-    <div class="mkt-browser-chrome">
-        <span class="mkt-browser-dot bg-red-400"></span>
-        <span class="mkt-browser-dot bg-amber-400"></span>
-        <span class="mkt-browser-dot bg-emerald-400"></span>
-        <span class="ml-3 flex-1 truncate rounded-md bg-white px-3 py-1 text-[11px] text-slate-400">connectpulse.cloud/dashboard</span>
+<div {{ $attributes->merge(['class' => 'mkt-browser' . ($light ? ' mkt-browser--light' : '')]) }}>
+    <div class="mkt-browser__chrome">
+        <span class="mkt-browser__dot bg-red-500/80"></span>
+        <span class="mkt-browser__dot bg-amber-500/80"></span>
+        <span class="mkt-browser__dot bg-emerald-500/80"></span>
+        <span class="mkt-browser__url">{{ $url }}</span>
     </div>
-    <div class="bg-slate-50">
+    <div class="{{ $light ? 'bg-slate-50' : 'bg-[#0a0e1a]' }}">
         {{ $slot }}
     </div>
 </div>
