@@ -22,9 +22,11 @@ class PipelineController extends Controller
 
         $columns = [];
         foreach (Lead::statuses() as $key => $label) {
+            $columnLeads = $leads->where('status', $key)->values();
             $columns[$key] = [
                 'label' => $label,
-                'leads' => $leads->where('status', $key)->values(),
+                'leads' => $columnLeads,
+                'value' => $columnLeads->sum(fn (Lead $lead) => (float) ($lead->estimated_value ?? 0)),
             ];
         }
 

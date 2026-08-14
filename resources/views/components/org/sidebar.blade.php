@@ -2,7 +2,7 @@
 
 @php
     $user = auth()->user();
-    $orgName = $shellOrganization->company_name ?? $user->organization?->company_name ?? 'Workspace';
+    $orgName = ($shellOrganization ?? auth()->user()->organization)?->company_name ?? 'Workspace';
 @endphp
 
 <div class="flex h-full flex-col">

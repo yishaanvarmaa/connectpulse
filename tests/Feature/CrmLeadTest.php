@@ -135,4 +135,22 @@ class CrmLeadTest extends TestCase
     {
         $this->get(route('org.crm.dashboard'))->assertRedirect(route('login'));
     }
+
+    public function test_org_admin_can_view_pipeline(): void
+    {
+        Lead::create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Pipeline Lead',
+            'phone' => '9876543210',
+            'source' => Lead::SOURCE_FACEBOOK,
+            'status' => Lead::STATUS_NEW,
+            'priority' => Lead::PRIORITY_MEDIUM,
+            'estimated_value' => 24999,
+        ]);
+
+        $this->actingAs($this->user)
+            ->get(route('org.crm.pipeline.index'))
+            ->assertOk()
+            ->assertSee('Pipeline Lead');
+    }
 }

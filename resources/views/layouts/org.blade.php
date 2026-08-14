@@ -23,7 +23,10 @@
     </aside>
 
     <div class="flex flex-1 flex-col lg:pl-60">
-        <x-org.topbar :title="$pageTitle ?? null" :subtitle="$pageSubtitle ?? null">
+        <x-org.topbar
+            :title="trim($__env->yieldContent('page-title')) ?: null"
+            :subtitle="trim($__env->yieldContent('page-subtitle')) ?: null"
+        >
             @isset($headerActions)
                 <x-slot:actions>{{ $headerActions }}</x-slot:actions>
             @endisset
@@ -45,6 +48,9 @@
 </div>
 
 <x-org.mobile-nav />
+@if(auth()->user()?->isOrganizationAdmin())
+    <x-crm.lead-slideover />
+@endif
 @stack('scripts')
 </body>
 </html>

@@ -2,20 +2,23 @@
 
 @section('title', 'Pipeline')
 
-@php $pageTitle = 'Pipeline'; $pageSubtitle = 'Move leads through your sales stages'; @endphp
+@section('page-title', 'Pipeline')
+@section('page-subtitle', 'Move leads through your sales stages')
 
 @section('content')
 <div class="overflow-x-auto pb-2 -mx-4 px-4 scrollbar-thin">
     <div class="flex gap-3 min-w-max">
-        @foreach($columns as $status => $column)
-            @php
-                $columnValue = $column['leads']->sum('estimated_value');
-            @endphp
+        @foreach($columns as $columnKey => $column)
             <div class="w-72 shrink-0">
                 <div class="mb-2 flex items-end justify-between px-1">
                     <div>
                         <h2 class="text-sm font-semibold text-slate-800">{{ $column['label'] }}</h2>
-                        <p class="text-xs text-slate-500">{{ $column['leads']->count() }} leads@if($columnValue > 0) · ₹{{ number_format($columnValue, 0) }}@endif</p>
+                        <p class="text-xs text-slate-500">
+                            {{ $column['leads']->count() }} leads
+                            @if(($column['value'] ?? 0) > 0)
+                                · ₹{{ number_format($column['value'], 0) }}
+                            @endif
+                        </p>
                     </div>
                 </div>
                 <div class="min-h-[280px] space-y-2 rounded-xl border border-slate-200/80 bg-slate-100/50 p-2">
@@ -30,7 +33,7 @@
                                     </div>
                                 </div>
                                 @if($lead->estimated_value)
-                                    <p class="mt-2 text-sm font-semibold text-slate-900">₹{{ number_format($lead->estimated_value, 0) }}</p>
+                                    <p class="mt-2 text-sm font-semibold text-slate-900">₹{{ number_format((float) $lead->estimated_value, 0) }}</p>
                                 @endif
                                 <div class="mt-2 flex flex-wrap gap-1">
                                     <x-ui.badge>{{ $lead->sourceLabel() }}</x-ui.badge>
@@ -40,10 +43,11 @@
                                 </div>
                             </a>
                             @if(!$lead->isClosed())
-                                <form method="POST" action="{{ route('org.crm.pipeline.status', $lead) }}" class="mt-2">@csrf
+                                <form method="POST" action="{{ route('org.crm.pipeline.status', $lead) }}" class="mt-2">
+                                    @csrf
                                     <select name="status" onchange="this.form.submit()" class="cp-select !py-1.5 !text-xs">
-                                        @foreach($statuses as $key => $label)
-                                            <option value="{{ $key }}" @selected($lead->status === $key)>{{ $label }}</option>
+                                        @foreach($statuses as $statusKey => $statusLabel)
+                                            <option value="{{ $statusKey }}" @selected($lead->status === $statusKey)>{{ $statusLabel }}</option>
                                         @endforeach
                                     </select>
                                 </form>
