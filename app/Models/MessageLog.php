@@ -15,6 +15,7 @@ class MessageLog extends Model
 
     protected $fillable = [
         'organization_id',
+        'lead_id',
         'mobile',
         'message',
         'status',
@@ -36,5 +37,10 @@ class MessageLog extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function lead(): BelongsTo
+    {
+        return $this->belongsTo(Lead::class);
     }
 }

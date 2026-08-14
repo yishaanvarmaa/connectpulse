@@ -33,6 +33,10 @@
     <div class="rounded-xl bg-white border border-slate-200 p-6 shadow-sm">
         <h2 class="font-semibold text-slate-900 mb-4">Quick Links</h2>
         <div class="space-y-3 text-sm">
+            <a href="{{ route('org.crm.dashboard') }}" class="flex justify-between items-center rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 hover:bg-brand-100">
+                <span class="font-medium text-brand-700">CRM Dashboard</span>
+                <span class="text-brand-600">Leads & follow-ups →</span>
+            </a>
             <a href="{{ route('org.whatsapp.index') }}" class="flex justify-between items-center rounded-lg border border-slate-200 px-4 py-3 hover:bg-slate-50">
                 <span>WhatsApp Connection</span>
                 <span class="text-slate-500">{{ $stats['connection_status'] }}</span>

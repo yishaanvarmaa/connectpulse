@@ -22,15 +22,16 @@ class MessageService
         return $this->provider;
     }
 
-    public function queueMessage(Organization $organization, string $mobile, string $message): MessageLog
+    public function queueMessage(Organization $organization, string $mobile, string $message, ?int $leadId = null): MessageLog
     {
-        return DB::transaction(function () use ($organization, $mobile, $message) {
+        return DB::transaction(function () use ($organization, $mobile, $message, $leadId) {
             if (! $this->creditService->deductCredit($organization, "Queued message to {$mobile}")) {
                 throw new \RuntimeException('Insufficient credits.');
             }
 
             $log = MessageLog::create([
                 'organization_id' => $organization->id,
+                'lead_id' => $leadId,
                 'mobile' => $this->normalizeMobile($mobile),
                 'message' => $message,
                 'status' => MessageLog::STATUS_QUEUED,
@@ -132,6 +133,103 @@ class MessageService
     public function normalizeMobile(string $mobile): string
     {
         return preg_replace('/[^0-9]/', '', $mobile) ?? $mobile;
+    }
+
+    /**
+     * Cancel queued message logs and drop pending queue workers so nothing sends after reconnect.
+     *
+     * @return array{
+     *     organization_id: int,
+     *     queued_logs_cancelled: int,
+     *     credits_refunded: int,
+     *     pending_jobs_deleted: int,
+     *     failed_jobs_deleted: int
+     * }
+     */
+    public function purgeQueuedMessages(Organization $organization, bool $refundCredits = true): array
+    {
+        $queuedLogs = MessageLog::query()
+            ->where('organization_id', $organization->id)
+            ->where('status', MessageLog::STATUS_QUEUED)
+            ->orderBy('id')
+            ->get();
+
+        $creditsRefunded = 0;
+
+        DB::transaction(function () use ($organization, $queuedLogs, $refundCredits, &$creditsRefunded) {
+            foreach ($queuedLogs as $log) {
+                $log->update([
+                    'status' => MessageLog::STATUS_FAILED,
+                    'error_message' => 'Cancelled — removed from queue before send.',
+                ]);
+
+                if ($refundCredits && $log->credits_used > 0) {
+                    $this->creditService->addCredits(
+                        $organization,
+                        $log->credits_used,
+                        "Refund cancelled queued message #{$log->id}"
+                    );
+                    $creditsRefunded += $log->credits_used;
+                }
+            }
+        });
+
+        $pendingJobsDeleted = $this->deletePendingWhatsAppJobs();
+        $failedJobsDeleted = $this->deleteFailedWhatsAppJobs();
+
+        return [
+            'organization_id' => $organization->id,
+            'queued_logs_cancelled' => $queuedLogs->count(),
+            'credits_refunded' => $creditsRefunded,
+            'pending_jobs_deleted' => $pendingJobsDeleted,
+            'failed_jobs_deleted' => $failedJobsDeleted,
+        ];
+    }
+
+    private function deletePendingWhatsAppJobs(): int
+    {
+        $deleted = 0;
+
+        DB::table('jobs')
+            ->where('queue', 'messages')
+            ->orderBy('id')
+            ->chunkById(200, function ($jobs) use (&$deleted) {
+                foreach ($jobs as $job) {
+                    if ($this->isSendWhatsAppJobPayload((string) $job->payload)) {
+                        DB::table('jobs')->where('id', $job->id)->delete();
+                        $deleted++;
+                    }
+                }
+            });
+
+        return $deleted;
+    }
+
+    private function deleteFailedWhatsAppJobs(): int
+    {
+        if (! DB::getSchemaBuilder()->hasTable('failed_jobs')) {
+            return 0;
+        }
+
+        $deleted = 0;
+
+        DB::table('failed_jobs')
+            ->orderBy('id')
+            ->chunkById(200, function ($jobs) use (&$deleted) {
+                foreach ($jobs as $job) {
+                    if ($this->isSendWhatsAppJobPayload((string) $job->payload)) {
+                        DB::table('failed_jobs')->where('id', $job->id)->delete();
+                        $deleted++;
+                    }
+                }
+            });
+
+        return $deleted;
+    }
+
+    private function isSendWhatsAppJobPayload(string $payload): bool
+    {
+        return str_contains($payload, 'SendWhatsAppMessage');
     }
 
     public function getDashboardStats(Organization $organization): array

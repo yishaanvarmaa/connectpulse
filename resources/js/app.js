@@ -1,1 +1,1 @@
-//
+// ConnectPulse frontend entry point

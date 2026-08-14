@@ -23,10 +23,13 @@ class ConnectionController extends Controller
 
         $status = $this->messageService->provider()->getStatus($organization);
 
+        $connected = (bool) ($status['connected'] ?? false);
+
         return response()->json([
-            'connected' => (bool) ($status['connected'] ?? false),
-            'phone' => ($status['connected'] ?? false) ? ($status['phone'] ?? null) : null,
-            'status' => $status['status'] ?? (($status['connected'] ?? false) ? 'connected' : 'disconnected'),
+            'connected' => $connected,
+            'phone' => $connected ? ($status['phone'] ?? null) : null,
+            'display_name' => $connected ? ($organization->company_name ?? null) : null,
+            'status' => $status['status'] ?? ($connected ? 'connected' : 'disconnected'),
         ]);
     }
 }

@@ -47,10 +47,11 @@
         </div>
     @endif
 
-    <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 {{ request()->routeIs('org.crm.*') ? 'pb-24 md:pb-8' : '' }}">
         @yield('content')
     </main>
 </div>
+<x-crm-mobile-nav />
 @stack('scripts')
 </body>
 </html>

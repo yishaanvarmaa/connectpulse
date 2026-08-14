@@ -50,6 +50,16 @@ class Organization extends Model
         return $this->hasMany(MessageLog::class);
     }
 
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
+
+    public function leadFollowUps(): HasMany
+    {
+        return $this->hasMany(LeadFollowUp::class);
+    }
+
     public function isActive(): bool
     {
         return $this->status === self::STATUS_ACTIVE;
