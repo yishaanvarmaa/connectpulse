@@ -1,10 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', $organization->company_name.' — API Test')
-
-@section('nav')
-    <x-admin-org-nav :organization="$organization" />
-@endsection
 
 @section('content')
 <div class="mb-6">

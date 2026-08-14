@@ -1,10 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', $organization->company_name.' — WhatsApp')
-
-@section('nav')
-    <x-admin-org-nav :organization="$organization" />
-@endsection
 
 @section('content')
 <div class="mb-6">

@@ -1,10 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Create Organization')
-
-@section('nav')
-    <x-nav-link :href="route('admin.organizations.index')" :active="true">Organizations</x-nav-link>
-@endsection
 
 @section('content')
 <div class="max-w-2xl">

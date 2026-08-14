@@ -1,57 +1,45 @@
-@extends('layouts.app')
+@extends('layouts.org')
 
-@section('title', 'CRM Reports')
+@section('title', 'Reports')
 
-@section('nav')
-    <x-crm-nav />
-@endsection
+@php $pageTitle = 'Reports'; $pageSubtitle = 'Lead source performance'; @endphp
 
 @section('content')
-<div class="mb-6">
-    <h1 class="text-2xl font-bold text-slate-900">Reports</h1>
-    <p class="mt-1 text-sm text-slate-500">Lead source performance and conversion metrics</p>
+<div class="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <x-ui.stat label="Total leads" :value="number_format($stats['total_leads'])" />
+    <x-ui.stat label="Conversion" :value="$stats['conversion_rate'].'%'" />
+    <x-ui.stat label="Pipeline" :value="'₹'.number_format($stats['pipeline_value'], 0)" />
+    <x-ui.stat label="Won revenue" :value="'₹'.number_format($stats['won_revenue'], 0)" />
 </div>
 
-<div class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-8">
-    <x-stat-card label="Total Leads" :value="number_format($stats['total_leads'])" />
-    <x-stat-card label="Conversion Rate" :value="$stats['conversion_rate'].'%'" />
-    <x-stat-card label="Pipeline Value" :value="'₹'.number_format($stats['pipeline_value'], 0)" />
-    <x-stat-card label="Won Revenue" :value="'₹'.number_format($stats['won_revenue'], 0)" />
-</div>
-
-<div class="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-200">
-        <h2 class="font-semibold text-slate-900">Leads by Source</h2>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200">
-            <thead class="bg-slate-50">
+@if(empty($sourceAnalytics))
+    <x-ui.empty-state title="No report data yet" description="Reports will populate once you add leads and close deals." />
+@else
+    <div class="cp-table-wrap">
+        <table class="cp-table">
+            <thead>
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Source</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Leads</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Won</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Lost</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Conversion</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Revenue</th>
+                    <th>Source</th>
+                    <th class="text-right">Leads</th>
+                    <th class="text-right">Won</th>
+                    <th class="text-right">Lost</th>
+                    <th class="text-right">Conversion</th>
+                    <th class="text-right">Revenue</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-                @forelse($sourceAnalytics as $row)
-                    <tr>
-                        <td class="px-6 py-4 text-sm font-medium text-slate-900">{{ $row['source_label'] }}</td>
-                        <td class="px-6 py-4 text-sm text-slate-600 text-right">{{ $row['total'] }}</td>
-                        <td class="px-6 py-4 text-sm text-green-600 text-right">{{ $row['won'] }}</td>
-                        <td class="px-6 py-4 text-sm text-red-600 text-right">{{ $row['lost'] }}</td>
-                        <td class="px-6 py-4 text-sm text-slate-600 text-right">{{ $row['conversion_rate'] }}%</td>
-                        <td class="px-6 py-4 text-sm font-semibold text-slate-900 text-right">₹{{ number_format($row['revenue'], 0) }}</td>
+                @foreach($sourceAnalytics as $row)
+                    <tr class="hover:bg-slate-50/80">
+                        <td class="font-medium text-slate-900">{{ $row['source_label'] }}</td>
+                        <td class="text-right">{{ $row['total'] }}</td>
+                        <td class="text-right text-emerald-600">{{ $row['won'] }}</td>
+                        <td class="text-right text-red-600">{{ $row['lost'] }}</td>
+                        <td class="text-right">{{ $row['conversion_rate'] }}%</td>
+                        <td class="text-right font-semibold">₹{{ number_format($row['revenue'], 0) }}</td>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-8 text-sm text-slate-500 text-center">No data yet</td>
-                    </tr>
-                @endforelse
+                @endforeach
             </tbody>
         </table>
     </div>
-</div>
+@endif
 @endsection

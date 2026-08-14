@@ -1,13 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Organizations')
-
-@section('nav')
-    <x-nav-link :href="route('admin.dashboard')">Dashboard</x-nav-link>
-    <x-nav-link :href="route('admin.organizations.index')" :active="true">Organizations</x-nav-link>
-    <x-nav-link :href="route('admin.credits.index')">Credits</x-nav-link>
-    <x-nav-link :href="route('admin.logs.index')">Logs</x-nav-link>
-@endsection
 
 @section('content')
 <div class="flex justify-between items-center mb-8">

@@ -1,88 +1,109 @@
-@extends('layouts.app')
+@extends('layouts.org')
 
 @section('title', 'Leads')
 
-@section('nav')
-    <x-crm-nav />
-@endsection
+@php
+    $pageTitle = 'Leads';
+    $pageSubtitle = $leads->total() . ' total';
+@endphp
 
 @section('content')
-<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-    <div>
-        <h1 class="text-2xl font-bold text-slate-900">Leads</h1>
-        <p class="mt-1 text-sm text-slate-500">{{ $leads->total() }} total</p>
-    </div>
-    <a href="{{ route('org.crm.leads.create') }}" class="inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
-        + New Lead
-    </a>
-</div>
-
-<form method="GET" class="mb-6 rounded-xl bg-white border border-slate-200 p-4 shadow-sm space-y-3">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <input type="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search name, phone, company..."
-               class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-brand-500">
-        <select name="status" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <option value="">All statuses</option>
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <form method="GET" class="flex flex-1 flex-wrap gap-2">
+        <input type="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search leads..." class="cp-input max-w-xs">
+        <select name="status" class="cp-select w-auto" onchange="this.form.submit()">
+            <option value="">All stages</option>
             @foreach($statuses as $key => $label)
                 <option value="{{ $key }}" @selected(($filters['status'] ?? '') === $key)>{{ $label }}</option>
             @endforeach
         </select>
-        <select name="source" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <select name="source" class="cp-select w-auto" onchange="this.form.submit()">
             <option value="">All sources</option>
             @foreach($sources as $key => $label)
                 <option value="{{ $key }}" @selected(($filters['source'] ?? '') === $key)>{{ $label }}</option>
             @endforeach
         </select>
-        <select name="sort" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <option value="latest" @selected(($filters['sort'] ?? 'latest') === 'latest')>Latest first</option>
-            <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Oldest first</option>
-            <option value="follow_up" @selected(($filters['sort'] ?? '') === 'follow_up')>Follow-up date</option>
-            <option value="value" @selected(($filters['sort'] ?? '') === 'value')>Highest value</option>
-        </select>
-    </div>
-    <button type="submit" class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">Apply filters</button>
-</form>
-
-<div class="space-y-3">
-    @forelse($leads as $lead)
-        <a href="{{ route('org.crm.leads.show', $lead) }}" class="block rounded-xl bg-white border border-slate-200 p-4 shadow-sm hover:border-brand-200 transition-colors">
-            <div class="flex justify-between items-start gap-3">
-                <div class="min-w-0">
-                    <p class="font-semibold text-slate-900 truncate">{{ $lead->name }}</p>
-                    <p class="text-sm text-slate-500">{{ $lead->phone }}</p>
-                    @if($lead->interested_product)
-                        <p class="text-sm text-slate-600 mt-1">{{ $lead->interested_product }}</p>
-                    @endif
-                </div>
-                <div class="text-right shrink-0">
-                    @if($lead->estimated_value)
-                        <p class="text-sm font-semibold text-slate-900">₹{{ number_format($lead->estimated_value, 0) }}</p>
-                    @endif
-                    <span class="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full
-                        {{ $lead->status === 'won' ? 'bg-green-100 text-green-700' : ($lead->status === 'lost' ? 'bg-red-100 text-red-700' : 'bg-brand-50 text-brand-700') }}">
-                        {{ $lead->statusLabel() }}
-                    </span>
-                </div>
-            </div>
-            <div class="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-                <span>{{ $lead->sourceLabel() }}</span>
-                @if($lead->next_follow_up_at)
-                    <span>· Follow-up {{ $lead->next_follow_up_at->format('d M, h:i A') }}</span>
-                @endif
-                @if($lead->priority === 'high')
-                    <span class="text-red-600 font-medium">· High priority</span>
-                @endif
-            </div>
-        </a>
-    @empty
-        <div class="rounded-xl bg-white border border-slate-200 p-8 text-center">
-            <p class="text-sm text-slate-500">No leads found.</p>
-            <a href="{{ route('org.crm.leads.create') }}" class="mt-2 inline-block text-sm text-brand-600 underline">Add your first lead</a>
-        </div>
-    @endforelse
+    </form>
+    <button type="button" data-slideover-open="lead-slideover" class="cp-btn-primary shrink-0">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        New Lead
+    </button>
 </div>
 
-<div class="mt-6">{{ $leads->links() }}</div>
+@if($leads->isEmpty())
+    <x-ui.empty-state
+        title="No leads yet"
+        description="Start building your sales pipeline by adding your first lead."
+    >
+        <button type="button" data-slideover-open="lead-slideover" class="cp-btn-primary mt-4">+ New Lead</button>
+    </x-ui.empty-state>
+@else
+    <div class="cp-table-wrap hidden md:block">
+        <table class="cp-table">
+            <thead>
+                <tr>
+                    <th>Lead</th>
+                    <th>Product</th>
+                    <th>Source</th>
+                    <th>Stage</th>
+                    <th>Value</th>
+                    <th>Next follow-up</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @foreach($leads as $lead)
+                    <tr class="group hover:bg-slate-50/80">
+                        <td>
+                            <div class="flex items-center gap-2.5">
+                                <x-ui.avatar :name="$lead->name" />
+                                <div>
+                                    <a href="{{ route('org.crm.leads.show', $lead) }}" class="font-medium text-slate-900 hover:text-brand-600">{{ $lead->name }}</a>
+                                    <p class="text-xs text-slate-500">{{ $lead->phone }}@if($lead->company) · {{ $lead->company }}@endif</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-slate-600">{{ $lead->interested_product ?? '—' }}</td>
+                        <td class="text-slate-600">{{ $lead->sourceLabel() }}</td>
+                        <td><x-ui.badge type="brand">{{ $lead->statusLabel() }}</x-ui.badge></td>
+                        <td class="font-medium">{{ $lead->estimated_value ? '₹'.number_format($lead->estimated_value, 0) : '—' }}</td>
+                        <td class="text-slate-600">{{ $lead->next_follow_up_at?->format('M d, h:i A') ?? '—' }}</td>
+                        <td>
+                            <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <a href="{{ route('org.crm.leads.show', $lead) }}#whatsapp-form" class="cp-btn-success !px-2 !py-1 text-xs">WA</a>
+                                <a href="{{ route('org.crm.leads.show', $lead) }}" class="cp-btn-secondary !px-2 !py-1 text-xs">View</a>
+                            </div>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 
-<x-crm-fab />
+    {{-- Mobile cards --}}
+    <div class="space-y-2 md:hidden">
+        @foreach($leads as $lead)
+            <a href="{{ route('org.crm.leads.show', $lead) }}" class="cp-card block cp-card-body">
+                <div class="flex items-start gap-3">
+                    <x-ui.avatar :name="$lead->name" />
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-start justify-between gap-2">
+                            <p class="font-medium text-slate-900">{{ $lead->name }}</p>
+                            @if($lead->estimated_value)<span class="text-sm font-semibold">₹{{ number_format($lead->estimated_value, 0) }}</span>@endif
+                        </div>
+                        <p class="text-xs text-slate-500">{{ $lead->interested_product ?? $lead->phone }}</p>
+                        <div class="mt-2 flex flex-wrap gap-1.5">
+                            <x-ui.badge type="brand">{{ $lead->statusLabel() }}</x-ui.badge>
+                            <x-ui.badge>{{ $lead->sourceLabel() }}</x-ui.badge>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        @endforeach
+    </div>
+
+    <div class="mt-4">{{ $leads->links() }}</div>
+@endif
+
+<x-crm.lead-slideover />
 @endsection

@@ -89,7 +89,7 @@ Route::middleware(['auth', EnsureOrganizationAdmin::class])->name('org.')->group
     Route::redirect('/dashboard/settings', '/settings');
 
     Route::prefix('crm')->name('crm.')->group(function () {
-        Route::get('/', CrmDashboardController::class)->name('dashboard');
+        Route::redirect('/', '/dashboard')->name('dashboard');
         Route::get('/leads', [CrmLeadController::class, 'index'])->name('leads.index');
         Route::get('/leads/create', [CrmLeadController::class, 'create'])->name('leads.create');
         Route::post('/leads', [CrmLeadController::class, 'store'])->name('leads.store');

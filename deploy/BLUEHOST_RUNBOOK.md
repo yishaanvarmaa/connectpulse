@@ -60,6 +60,18 @@ cd /var/www/connectpulse
 php scripts/setup-sreekari-centers.php
 ```
 
+### Before reconnecting WhatsApp (clear stale queue)
+
+If WhatsApp was disconnected, old messages may still sit in the queue and will send as soon as the bridge reconnects. Audit and purge first:
+
+```bash
+cd /var/www/connectpulse
+php scripts/purge-queued-messages.php          # list queued logs + pending jobs
+php scripts/purge-queued-messages.php --purge  # cancel + refund credits + delete jobs
+# or: php artisan connectpulse:purge-queued --dry-run
+#     php artisan connectpulse:purge-queued
+```
+
 Log in: https://connectpulse.cloud/login  
 Super admin: `admin@connectpulse.app` / `password` (change immediately)
 

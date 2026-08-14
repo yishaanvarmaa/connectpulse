@@ -7,54 +7,50 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="h-full font-sans antialiased bg-slate-50">
-<div class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
-    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <a href="{{ route('home') }}" class="inline-block">
-            <div class="mx-auto h-12 w-12 rounded-xl bg-brand-600 flex items-center justify-center">
-                <span class="text-white font-bold text-lg">CP</span>
+<body class="min-h-full font-sans antialiased bg-slate-950 text-slate-100">
+<div class="flex min-h-full">
+    <div class="hidden lg:flex lg:w-1/2 flex-col justify-between bg-gradient-to-br from-brand-900 via-brand-800 to-slate-900 p-12">
+        <div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
+                <span class="text-sm font-bold">CP</span>
             </div>
-            <h1 class="mt-4 text-2xl font-bold text-slate-900">ConnectPulse</h1>
-        </a>
-        <p class="mt-2 text-sm text-slate-500">Centralized messaging for your business</p>
+            <h1 class="mt-8 text-3xl font-semibold tracking-tight">Sales CRM + WhatsApp,<br>in one place.</h1>
+            <p class="mt-4 max-w-md text-sm text-brand-100/80 leading-relaxed">Capture leads, schedule follow-ups, and communicate through WhatsApp — without switching tools.</p>
+        </div>
+        <p class="text-xs text-brand-200/60">Trusted by diagnostics & healthcare businesses across India.</p>
     </div>
 
-    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div class="bg-white py-8 px-6 shadow-sm border border-slate-200 rounded-xl sm:px-10">
+    <div class="flex flex-1 flex-col justify-center px-6 py-12 lg:px-16 bg-white text-slate-900">
+        <div class="mx-auto w-full max-w-sm">
+            <div class="lg:hidden mb-8 flex items-center gap-2">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white text-xs font-bold">CP</div>
+                <span class="font-semibold">ConnectPulse</span>
+            </div>
+            <h2 class="text-xl font-semibold text-slate-900">Welcome back</h2>
+            <p class="mt-1 text-sm text-slate-500">Sign in to your workspace</p>
+
             @if(session('error'))
-                <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">{{ session('error') }}</div>
+                <div class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{{ session('error') }}</div>
             @endif
 
-            <form method="POST" action="{{ route('login') }}" class="space-y-5">
-                @csrf
+            <form method="POST" action="{{ route('login') }}" class="mt-6 space-y-4">@csrf
                 <div>
-                    <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
-                    <input id="email" name="email" type="email" required autofocus value="{{ old('email') }}"
-                           class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
-                    @error('email')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                    <label for="email" class="mb-1 block text-xs font-medium text-slate-600">Email</label>
+                    <input id="email" name="email" type="email" required autofocus value="{{ old('email') }}" class="cp-input">
+                    @error('email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
-                    <input id="password" name="password" type="password" required
-                           class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    <label for="password" class="mb-1 block text-xs font-medium text-slate-600">Password</label>
+                    <input id="password" name="password" type="password" required class="cp-input">
                 </div>
-                <div class="flex items-center">
-                    <input id="remember" name="remember" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-brand-600">
-                    <label for="remember" class="ml-2 text-sm text-slate-600">Remember me</label>
-                </div>
-                <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
-                    Sign in
-                </button>
+                <label class="flex items-center gap-2 text-sm text-slate-600">
+                    <input id="remember" name="remember" type="checkbox" class="rounded border-slate-300 text-brand-600">
+                    Remember me
+                </label>
+                <button type="submit" class="cp-btn-primary w-full py-2.5">Sign in</button>
             </form>
-            <p class="mt-6 text-center text-xs text-slate-400">
-                <a href="{{ route('home') }}" class="hover:text-brand-600">← Back to website</a>
-            </p>
+            <p class="mt-6 text-center text-xs text-slate-400"><a href="{{ route('home') }}" class="hover:text-brand-600">← Back to website</a></p>
         </div>
-        <p class="mt-6 text-center text-xs text-slate-400">
-            <a href="{{ route('privacy') }}" class="hover:underline">Privacy</a> ·
-            <a href="{{ route('terms') }}" class="hover:underline">Terms</a> ·
-            <a href="{{ route('refund') }}" class="hover:underline">Refunds</a>
-        </p>
     </div>
 </div>
 </body>

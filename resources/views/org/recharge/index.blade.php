@@ -1,79 +1,65 @@
-@extends('layouts.app')
+@extends('layouts.org')
 
-@section('title', 'Recharge')
+@section('title', 'Credits')
 
-@section('nav')
-    <x-org-nav />
-@endsection
+@php
+    $balance = $organization->creditWallet?->balance ?? 0;
+    $pageTitle = 'Credits';
+    $pageSubtitle = number_format($balance).' available';
+@endphp
 
 @section('content')
-<div class="mb-8">
-    <h1 class="text-2xl font-bold text-slate-900">Recharge Credits</h1>
-    <p class="mt-1 text-sm text-slate-500">Manage your messaging credits for {{ $organization->company_name }}</p>
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-    <div class="lg:col-span-1 rounded-xl bg-white border border-slate-200 p-6 shadow-sm">
-        <p class="text-sm font-medium text-slate-500">Available Credits</p>
-        <p class="mt-2 text-4xl font-bold text-brand-600">{{ number_format($organization->creditWallet?->balance ?? 0) }}</p>
-        <p class="mt-4 text-xs text-slate-400">1 credit = 1 WhatsApp message</p>
+<div class="grid grid-cols-1 gap-5 lg:grid-cols-3 mb-5">
+    <div class="cp-card cp-card-body lg:col-span-1">
+        <p class="text-xs font-medium text-slate-500">Available credits</p>
+        <p class="mt-2 text-4xl font-semibold tracking-tight text-brand-600">{{ number_format($balance) }}</p>
+        <p class="mt-2 text-xs text-slate-400">1 credit = 1 WhatsApp message</p>
+        <a href="mailto:support@connectpulse.cloud?subject=Credit%20Recharge%20-%20{{ urlencode($organization->company_name) }}" class="cp-btn-primary mt-5 w-full">Request recharge</a>
     </div>
 
-    <div class="lg:col-span-2 rounded-xl bg-white border border-slate-200 p-6 shadow-sm">
-        <h2 class="font-semibold text-slate-900 mb-2">Add Credits</h2>
-        <p class="text-sm text-slate-500 mb-4">Recharge online from our <a href="{{ route('pricing') }}" class="text-brand-600 hover:underline">pricing page</a>. Payments via Cashfree — contact support if you need help recharging.</p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+    <div class="cp-card cp-card-body lg:col-span-2">
+        <h2 class="text-sm font-semibold text-slate-900 mb-1">Recharge plans</h2>
+        <p class="text-xs text-slate-500 mb-4">Contact support or visit <a href="{{ route('pricing') }}" class="text-brand-600 hover:underline">pricing</a> to add credits.</p>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
             @foreach(config('connectpulse.pricing') as $plan)
-                <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center">
-                    <p class="text-sm font-bold text-slate-900">₹{{ number_format($plan['price']) }}</p>
+                <div class="rounded-xl border {{ ($plan['popular'] ?? false) ? 'border-brand-300 bg-brand-50/50 ring-1 ring-brand-200' : 'border-slate-200 bg-white' }} p-4 text-center">
+                    @if($plan['popular'] ?? false)<p class="text-[10px] font-semibold uppercase text-brand-600 mb-1">Popular</p>@endif
+                    <p class="text-lg font-bold text-slate-900">₹{{ number_format($plan['price']) }}</p>
                     <p class="text-xs text-slate-500">{{ number_format($plan['credits']) }} credits</p>
                 </div>
             @endforeach
         </div>
-        <div class="flex flex-wrap gap-3">
-            <a href="mailto:support@connectpulse.cloud?subject=Credit%20Recharge%20-%20{{ urlencode($organization->company_name) }}"
-               class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">
-                Request Recharge
-            </a>
-            <button type="button" disabled
-                    class="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-400 cursor-not-allowed"
-                    title="Coming soon">
-                Pay Online (Coming Soon)
-            </button>
-        </div>
-        <p class="mt-4 text-xs text-slate-400">Invoice downloads will be available here in a future update.</p>
     </div>
 </div>
 
-<div class="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-        <h2 class="font-semibold text-slate-900">Credit History</h2>
-        <span class="text-xs text-slate-400">Invoices — coming soon</span>
+<div class="cp-table-wrap">
+    <div class="cp-card-header border-b border-slate-100">
+        <h2 class="text-sm font-semibold text-slate-900">Transaction history</h2>
     </div>
-    <table class="min-w-full divide-y divide-slate-200">
-        <thead class="bg-slate-50">
+    <table class="cp-table">
+        <thead>
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Type</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Amount</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Balance After</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Remarks</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Balance after</th>
+                <th>Remarks</th>
+                <th>Date</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
             @forelse($transactions as $tx)
-                <tr>
-                    <td class="px-6 py-4 text-sm {{ $tx->type === 'credit' ? 'text-green-600' : 'text-red-600' }}">{{ ucfirst($tx->type) }}</td>
-                    <td class="px-6 py-4 text-sm text-slate-900">{{ $tx->type === 'credit' ? '+' : '-' }}{{ $tx->amount }}</td>
-                    <td class="px-6 py-4 text-sm text-slate-500">{{ number_format($tx->balance_after) }}</td>
-                    <td class="px-6 py-4 text-sm text-slate-500">{{ $tx->remarks }}</td>
-                    <td class="px-6 py-4 text-sm text-slate-500">{{ $tx->created_at->format('M d, Y H:i') }}</td>
+                <tr class="hover:bg-slate-50/80">
+                    <td><x-ui.badge :type="$tx->type === 'credit' ? 'success' : 'danger'">{{ ucfirst($tx->type) }}</x-ui.badge></td>
+                    <td class="font-medium">{{ $tx->type === 'credit' ? '+' : '-' }}{{ $tx->amount }}</td>
+                    <td>{{ number_format($tx->balance_after) }}</td>
+                    <td class="text-slate-500 max-w-xs truncate">{{ $tx->remarks }}</td>
+                    <td class="text-slate-500">{{ $tx->created_at->format('M d, Y H:i') }}</td>
                 </tr>
             @empty
-                <tr><td colspan="5" class="px-6 py-8 text-center text-sm text-slate-500">No transactions yet</td></tr>
+                <tr><td colspan="5" class="py-10 text-center text-sm text-slate-500">No transactions yet</td></tr>
             @endforelse
         </tbody>
     </table>
-    <div class="px-6 py-4 border-t border-slate-200">{{ $transactions->links() }}</div>
+    <div class="border-t border-slate-100 px-4 py-3">{{ $transactions->links() }}</div>
 </div>
 @endsection

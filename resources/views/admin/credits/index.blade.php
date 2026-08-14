@@ -1,13 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Credits')
-
-@section('nav')
-    <x-nav-link :href="route('admin.dashboard')">Dashboard</x-nav-link>
-    <x-nav-link :href="route('admin.organizations.index')">Organizations</x-nav-link>
-    <x-nav-link :href="route('admin.credits.index')" :active="true">Credits</x-nav-link>
-    <x-nav-link :href="route('admin.logs.index')">Logs</x-nav-link>
-@endsection
 
 @section('content')
 <h1 class="text-2xl font-bold text-slate-900 mb-6">Credit Management</h1>

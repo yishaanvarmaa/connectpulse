@@ -1,85 +1,81 @@
-@php
-    $sections = [
-        'overdue' => ['label' => 'Overdue', 'color' => 'red', 'items' => $groups['overdue'], 'type' => 'follow_up'],
-        'today' => ['label' => 'Today', 'color' => 'amber', 'items' => $groups['today'], 'type' => 'follow_up'],
-        'upcoming' => ['label' => 'Upcoming', 'color' => 'brand', 'items' => $groups['upcoming'], 'type' => 'follow_up'],
-        'no_follow_up' => ['label' => 'No Follow-up Scheduled', 'color' => 'slate', 'items' => $groups['no_follow_up'], 'type' => 'lead'],
-    ];
-@endphp
-
-@extends('layouts.app')
+@extends('layouts.org')
 
 @section('title', 'Follow-ups')
 
-@section('nav')
-    <x-crm-nav />
-@endsection
+@php
+    $pageTitle = 'Follow-ups';
+    $pageSubtitle = ($groups['overdue']->count()).' overdue · '.($groups['today']->count()).' today';
+@endphp
 
 @section('content')
-<div class="mb-6">
-    <h1 class="text-2xl font-bold text-slate-900">Follow-ups</h1>
-    <p class="mt-1 text-sm text-slate-500">
-        {{ $groups['overdue']->count() }} overdue · {{ $groups['today']->count() }} today · {{ $groups['upcoming']->count() }} upcoming
-    </p>
+<div class="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="rounded-xl border border-red-200 bg-red-50 p-4">
+        <p class="text-xs font-medium text-red-600">Overdue</p>
+        <p class="mt-1 text-2xl font-semibold text-red-900">{{ $groups['overdue']->count() }}</p>
+    </div>
+    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <p class="text-xs font-medium text-amber-700">Today</p>
+        <p class="mt-1 text-2xl font-semibold text-amber-900">{{ $groups['today']->count() }}</p>
+    </div>
+    <div class="rounded-xl border border-brand-200 bg-brand-50 p-4">
+        <p class="text-xs font-medium text-brand-700">Upcoming</p>
+        <p class="mt-1 text-2xl font-semibold text-brand-900">{{ $groups['upcoming']->count() }}</p>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <p class="text-xs font-medium text-slate-500">No follow-up</p>
+        <p class="mt-1 text-2xl font-semibold text-slate-900">{{ $groups['no_follow_up']->count() }}</p>
+    </div>
 </div>
 
-@foreach($sections as $key => $section)
-    @if($section['items']->count() > 0 || $key === 'overdue' || $key === 'today')
-        <div class="mb-8">
-            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-3">
-                {{ $section['label'] }}
-                <span class="text-slate-400">({{ $section['items']->count() }})</span>
-            </h2>
+@php
+    $sections = [
+        'overdue' => ['Overdue', 'border-red-200 bg-red-50/30'],
+        'today' => ['Today', 'border-amber-200 bg-amber-50/20'],
+        'upcoming' => ['Upcoming', ''],
+        'no_follow_up' => ['No follow-up scheduled', ''],
+    ];
+@endphp
 
-            <div class="space-y-3">
-                @forelse($section['items'] as $item)
-                    @if($section['type'] === 'follow_up')
+@foreach($sections as $key => [$label, $accent])
+    @if($groups[$key]->count() > 0 || in_array($key, ['overdue', 'today']))
+        <div class="mb-6">
+            <h2 class="mb-3 text-sm font-semibold text-slate-900">{{ $label }} <span class="font-normal text-slate-400">({{ $groups[$key]->count() }})</span></h2>
+            <div class="space-y-2">
+                @forelse($groups[$key] as $item)
+                    @if($key !== 'no_follow_up')
                         @php $lead = $item->lead; @endphp
-                        <div class="rounded-xl bg-white border border-slate-200 p-4 shadow-sm">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div>
-                                    <a href="{{ route('org.crm.leads.show', $lead) }}" class="font-semibold text-slate-900 hover:text-brand-600">{{ $lead->name }}</a>
-                                    @if($lead->interested_product)
-                                        <p class="text-sm text-slate-600">{{ $lead->interested_product }}</p>
-                                    @endif
-                                    @if($lead->estimated_value)
-                                        <p class="text-sm font-semibold text-slate-900">₹{{ number_format($lead->estimated_value, 0) }}</p>
-                                    @endif
-                                    <p class="text-xs text-slate-500 mt-1">{{ $item->typeLabel() }} · {{ $item->scheduled_at->format('d M, h:i A') }}</p>
+                        <div class="cp-card cp-card-body flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between {{ $accent }}">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="w-20 shrink-0 text-xs font-medium text-slate-500">{{ $item->scheduled_at->format('h:i A') }}</span>
+                                <x-ui.avatar :name="$lead->name" />
+                                <div class="min-w-0">
+                                    <a href="{{ route('org.crm.leads.show', $lead) }}" class="font-medium text-slate-900 hover:text-brand-600">{{ $lead->name }}</a>
+                                    <p class="text-xs text-slate-500">{{ $lead->interested_product }} · {{ $item->typeLabel() }}</p>
                                 </div>
-                                <div class="flex flex-wrap gap-2">
-                                    <a href="tel:{{ $lead->phone }}" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Call</a>
-                                    <button type="button" onclick="toggleWaForm('wa-{{ $item->id }}')" class="rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700">WhatsApp</button>
-                                    <form method="POST" action="{{ route('org.crm.follow-ups.complete', $item) }}" class="inline">
-                                        @csrf
-                                        <button type="submit" class="rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700">Complete</button>
-                                    </form>
-                                    <button type="button" onclick="toggleReschedule('rs-{{ $item->id }}')" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700">Reschedule</button>
-                                </div>
+                                @if($lead->estimated_value)<span class="hidden sm:block text-sm font-semibold">₹{{ number_format($lead->estimated_value, 0) }}</span>@endif
                             </div>
-                            <form id="wa-{{ $item->id }}" method="POST" action="{{ route('org.crm.follow-ups.whatsapp', $item) }}" class="hidden mt-3 flex gap-2">
-                                @csrf
-                                <input type="text" name="message" required placeholder="WhatsApp message..." class="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
-                                <button type="submit" class="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white">Send</button>
+                            <div class="flex flex-wrap gap-1.5 sm:shrink-0">
+                                <button type="button" onclick="togglePanel('wa-{{ $item->id }}')" class="cp-btn-success !py-1.5 text-xs">WhatsApp</button>
+                                <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary !py-1.5 text-xs">Call</a>
+                                <form method="POST" action="{{ route('org.crm.follow-ups.complete', $item) }}">@csrf<button class="cp-btn-primary !py-1.5 text-xs">Complete</button></form>
+                                <button type="button" onclick="togglePanel('rs-{{ $item->id }}')" class="cp-btn-ghost !py-1.5 text-xs">Reschedule</button>
+                            </div>
+                            <form id="wa-{{ $item->id }}" method="POST" action="{{ route('org.crm.follow-ups.whatsapp', $item) }}" class="hidden w-full flex gap-2 sm:col-span-full">@csrf
+                                <input type="text" name="message" required class="cp-input" placeholder="Message...">
+                                <button class="cp-btn-success">Send</button>
                             </form>
-                            <form id="rs-{{ $item->id }}" method="POST" action="{{ route('org.crm.follow-ups.reschedule', $item) }}" class="hidden mt-3 flex gap-2">
-                                @csrf
-                                <input type="datetime-local" name="scheduled_at" required class="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
-                                <button type="submit" class="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white">Save</button>
+                            <form id="rs-{{ $item->id }}" method="POST" action="{{ route('org.crm.follow-ups.reschedule', $item) }}" class="hidden w-full flex gap-2">@csrf
+                                <input type="datetime-local" name="scheduled_at" required class="cp-input">
+                                <button class="cp-btn-primary">Save</button>
                             </form>
                         </div>
                     @else
-                        <div class="rounded-xl bg-white border border-slate-200 p-4 shadow-sm">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div>
-                                    <a href="{{ route('org.crm.leads.show', $item) }}" class="font-semibold text-slate-900">{{ $item->name }}</a>
-                                    @if($item->interested_product)
-                                        <p class="text-sm text-slate-600">{{ $item->interested_product }}</p>
-                                    @endif
-                                    <p class="text-xs text-slate-500 mt-1">{{ $item->statusLabel() }} · {{ $item->sourceLabel() }}</p>
-                                </div>
-                                <a href="{{ route('org.crm.leads.show', $item) }}" class="rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700">Schedule</a>
+                        <div class="cp-card cp-card-body flex items-center justify-between">
+                            <div>
+                                <a href="{{ route('org.crm.leads.show', $item) }}" class="font-medium text-slate-900">{{ $item->name }}</a>
+                                <p class="text-xs text-slate-500">{{ $item->statusLabel() }} · {{ $item->sourceLabel() }}</p>
                             </div>
+                            <a href="{{ route('org.crm.leads.show', $item) }}" class="cp-btn-secondary !py-1.5 text-xs">Schedule</a>
                         </div>
                     @endif
                 @empty
@@ -89,13 +85,8 @@
         </div>
     @endif
 @endforeach
-
-<x-crm-fab />
 @endsection
 
 @push('scripts')
-<script>
-function toggleWaForm(id) { document.getElementById(id).classList.toggle('hidden'); }
-function toggleReschedule(id) { document.getElementById(id).classList.toggle('hidden'); }
-</script>
+<script>function togglePanel(id){document.getElementById(id)?.classList.toggle('hidden');document.getElementById(id)?.classList.toggle('flex');}</script>
 @endpush
