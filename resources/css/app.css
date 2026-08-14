@@ -55,28 +55,24 @@
         @apply block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20;
     }
 
-    .cp-btn {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-50 disabled:pointer-events-none;
-    }
-
     .cp-btn-primary {
-        @apply cp-btn bg-brand-600 text-white hover:bg-brand-700;
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-50 disabled:pointer-events-none bg-brand-600 text-white hover:bg-brand-700;
     }
 
     .cp-btn-secondary {
-        @apply cp-btn border border-slate-200 bg-white text-slate-700 hover:bg-slate-50;
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-50 disabled:pointer-events-none border border-slate-200 bg-white text-slate-700 hover:bg-slate-50;
     }
 
     .cp-btn-ghost {
-        @apply cp-btn text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-50 disabled:pointer-events-none text-slate-600 hover:bg-slate-100 hover:text-slate-900;
     }
 
     .cp-btn-danger {
-        @apply cp-btn border border-red-200 bg-red-50 text-red-700 hover:bg-red-100;
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-50 disabled:pointer-events-none border border-red-200 bg-red-50 text-red-700 hover:bg-red-100;
     }
 
     .cp-btn-success {
-        @apply cp-btn border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100;
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-50 disabled:pointer-events-none border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100;
     }
 
     .cp-badge {

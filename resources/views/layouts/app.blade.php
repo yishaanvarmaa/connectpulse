@@ -51,7 +51,6 @@
         @yield('content')
     </main>
 </div>
-<x-crm-mobile-nav />
 @stack('scripts')
 </body>
 </html>
