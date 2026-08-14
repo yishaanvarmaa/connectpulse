@@ -10,7 +10,7 @@
             <div>
                 <h1 class="text-4xl font-bold text-slate-900">Get in touch</h1>
                 <p class="mt-4 text-lg text-slate-600 leading-relaxed">
-                    Need a new account, help with API integration, or have a billing question? We're here to help Indian businesses get started with WhatsApp messaging.
+                    Start with ConnectPulse CRM — manage leads, follow-ups, WhatsApp and your pipeline. We'll help you get set up.
                 </p>
 
                 <div class="mt-10 space-y-6">
@@ -77,7 +77,8 @@
                     <div>
                         <label class="block text-sm font-medium text-slate-700">What do you need?</label>
                         <select class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
-                            <option>New account setup</option>
+                            <option>New CRM account</option>
+                            <option>Follow-up & sales workflow</option>
                             <option>API integration help</option>
                             <option>Billing / recharge</option>
                             <option>Technical support</option>
