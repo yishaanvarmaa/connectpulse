@@ -24,10 +24,14 @@
                 @endif
             </div>
         </div>
-        <div class="flex flex-wrap gap-2 hidden lg:flex">
+        <div class="hidden lg:flex flex-wrap items-center gap-2">
             <button type="button" data-whatsapp-open data-lead-name="{{ $lead->name }}" data-whatsapp-url="{{ route('org.crm.leads.whatsapp', $lead) }}" class="cp-btn-success">WhatsApp</button>
             <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary">Call</a>
-            <a href="#log-interaction" class="cp-btn-primary">Log follow-up</a>
+            @if($pendingFollowUp)
+                <button type="button" data-sheet-open="complete-{{ $pendingFollowUp->id }}" class="cp-btn-primary">Complete follow-up</button>
+            @else
+                <a href="#log-interaction" class="cp-btn-primary">Log follow-up</a>
+            @endif
             <a href="{{ route('org.crm.leads.edit', $lead) }}" class="cp-btn-ghost">Edit</a>
             @if(!$lead->isClosed())
                 <form method="POST" action="{{ route('org.crm.leads.status', $lead) }}" class="inline">@csrf<input type="hidden" name="status" value="won"><button class="cp-btn-success">Won</button></form>
@@ -198,9 +202,5 @@
 </div>
 
 {{-- Mobile sticky actions --}}
-<div class="cp-sticky-actions grid grid-cols-3 gap-2">
-    <button type="button" data-whatsapp-open data-lead-name="{{ $lead->name }}" data-whatsapp-url="{{ route('org.crm.leads.whatsapp', $lead) }}" class="cp-btn-success !py-2.5">WhatsApp</button>
-    <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary !py-2.5 text-center">Call</a>
-    <a href="#log-interaction" class="cp-btn-primary !py-2.5 text-center">Follow-up</a>
-</div>
+<x-crm.lead-action-bar :lead="$lead" :pending-follow-up="$pendingFollowUp ?? null" />
 @endsection

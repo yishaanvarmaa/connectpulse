@@ -128,7 +128,19 @@
     }
 
     .cp-sticky-actions {
-        @apply fixed inset-x-0 bottom-16 z-20 border-t border-slate-200 bg-white/95 backdrop-blur px-4 py-3 lg:hidden;
+        @apply fixed inset-x-0 bottom-16 z-20 px-4 pb-1 lg:hidden;
+    }
+
+    .cp-action-bar {
+        @apply flex overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-lg shadow-slate-900/10;
+    }
+
+    .cp-action-bar-item {
+        @apply flex flex-1 flex-col items-center justify-center gap-0.5 border-r border-slate-100 py-2.5 text-[11px] font-medium text-slate-600 transition-colors last:border-r-0 active:bg-slate-50;
+    }
+
+    .cp-action-bar-item--accent {
+        @apply text-emerald-700;
     }
 
     .safe-area-pb {
