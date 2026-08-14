@@ -47,6 +47,82 @@ class CrmLeadTest extends TestCase
         ]);
     }
 
+    public function test_org_admin_can_log_interaction_and_schedule_next_follow_up(): void
+    {
+        $lead = Lead::create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Follow-up Lead',
+            'phone' => '9876543210',
+            'source' => Lead::SOURCE_MANUAL,
+            'status' => Lead::STATUS_NEW,
+            'priority' => Lead::PRIORITY_MEDIUM,
+            'next_follow_up_at' => now()->subHour(),
+        ]);
+
+        $followUp = \App\Models\LeadFollowUp::create([
+            'lead_id' => $lead->id,
+            'organization_id' => $this->organization->id,
+            'created_by' => $this->user->id,
+            'scheduled_at' => now()->subHour(),
+            'type' => \App\Models\LeadFollowUp::TYPE_CALL,
+            'status' => \App\Models\LeadFollowUp::STATUS_PENDING,
+        ]);
+
+        $nextAt = now()->addDay()->format('Y-m-d\TH:i');
+
+        $this->actingAs($this->user)->post(route('org.crm.leads.log-interaction', $lead), [
+            'outcome' => \App\Models\LeadActivity::OUTCOME_NO_ANSWER,
+            'notes' => 'Rang twice, no answer.',
+            'follow_up_id' => $followUp->id,
+            'next_scheduled_at' => $nextAt,
+            'next_type' => \App\Models\LeadFollowUp::TYPE_CALL,
+        ])->assertRedirect();
+
+        $followUp->refresh();
+        $this->assertSame(\App\Models\LeadFollowUp::STATUS_COMPLETED, $followUp->status);
+        $this->assertStringContainsString('no answer', strtolower($followUp->notes));
+
+        $this->assertDatabaseHas('lead_activities', [
+            'lead_id' => $lead->id,
+            'type' => 'interaction_logged',
+            'description' => 'Rang twice, no answer.',
+        ]);
+
+        $this->assertDatabaseHas('lead_follow_ups', [
+            'lead_id' => $lead->id,
+            'status' => \App\Models\LeadFollowUp::STATUS_PENDING,
+            'type' => \App\Models\LeadFollowUp::TYPE_CALL,
+        ]);
+
+        $this->actingAs($this->user)
+            ->get(route('org.crm.leads.show', $lead))
+            ->assertOk()
+            ->assertSee('Rang twice, no answer.')
+            ->assertSee('Called — no answer');
+    }
+
+    public function test_org_admin_can_create_lead_with_minimal_slideover_fields(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('org.crm.leads.store'), [
+            'name' => 'Minimal Lead',
+            'phone' => '+91 98765 43210',
+            'source' => 'manual',
+            'estimated_value' => '',
+        ]);
+
+        $response->assertRedirect(route('org.crm.leads.index'));
+        $this->assertDatabaseHas('leads', [
+            'organization_id' => $this->organization->id,
+            'name' => 'Minimal Lead',
+            'phone' => '919876543210',
+        ]);
+
+        $this->actingAs($this->user)
+            ->get(route('org.crm.leads.index'))
+            ->assertOk()
+            ->assertSee('Minimal Lead');
+    }
+
     public function test_org_admin_can_create_lead(): void
     {
         $response = $this->actingAs($this->user)->post(route('org.crm.leads.store'), [
@@ -58,7 +134,7 @@ class CrmLeadTest extends TestCase
             'next_follow_up_at' => now()->addDay()->format('Y-m-d\TH:i'),
         ]);
 
-        $response->assertRedirect();
+        $response->assertRedirect(route('org.crm.leads.index'));
         $this->assertDatabaseHas('leads', [
             'organization_id' => $this->organization->id,
             'name' => 'Ravi Kumar',

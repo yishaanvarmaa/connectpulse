@@ -2,10 +2,10 @@
 
 @section('title', $lead->name)
 
-@php
-    $pageTitle = $lead->name;
-    $pageSubtitle = trim(($lead->company ? $lead->company.' · ' : '').$lead->statusLabel());
-@endphp
+@section('page-title', $lead->name)
+@section('page-subtitle')
+    {{ trim(($lead->company ? $lead->company.' · ' : '').$lead->statusLabel()) }}
+@endsection
 
 @section('content')
 <div class="mb-5 cp-card cp-card-body">
@@ -14,9 +14,9 @@
             <x-ui.avatar :name="$lead->name" class="!h-12 !w-12 !text-base" />
             <div>
                 <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-lg">{{ $lead->temperatureIcon() }}</span>
                     <h2 class="text-xl font-semibold text-slate-900">{{ $lead->name }}</h2>
                     <x-ui.badge type="brand">{{ $lead->statusLabel() }}</x-ui.badge>
-                    @if($lead->priority === 'high')<x-ui.badge type="danger">High priority</x-ui.badge>@endif
                 </div>
                 <p class="mt-1 text-sm text-slate-500">{{ $lead->phone }}@if($lead->email) · {{ $lead->email }}@endif</p>
                 @if($lead->estimated_value)
@@ -24,10 +24,10 @@
                 @endif
             </div>
         </div>
-        <div class="flex flex-wrap gap-2">
-            <button type="button" onclick="document.getElementById('whatsapp-form').classList.toggle('hidden')" class="cp-btn-success">WhatsApp</button>
+        <div class="flex flex-wrap gap-2 hidden lg:flex">
+            <button type="button" data-whatsapp-open data-lead-name="{{ $lead->name }}" data-whatsapp-url="{{ route('org.crm.leads.whatsapp', $lead) }}" class="cp-btn-success">WhatsApp</button>
             <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary">Call</a>
-            <button type="button" onclick="document.getElementById('followup-form').classList.toggle('hidden')" class="cp-btn-secondary">Follow-up</button>
+            <a href="#log-interaction" class="cp-btn-primary">Log follow-up</a>
             <a href="{{ route('org.crm.leads.edit', $lead) }}" class="cp-btn-ghost">Edit</a>
             @if(!$lead->isClosed())
                 <form method="POST" action="{{ route('org.crm.leads.status', $lead) }}" class="inline">@csrf<input type="hidden" name="status" value="won"><button class="cp-btn-success">Won</button></form>
@@ -41,12 +41,6 @@
         <textarea name="message" rows="3" required placeholder="Type WhatsApp message..." class="cp-input"></textarea>
         <button type="submit" class="cp-btn-success">Send via ConnectPulse</button>
     </form>
-    <form id="followup-form" method="POST" action="{{ route('org.crm.leads.follow-ups.store', $lead) }}" class="hidden mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2">
-        @csrf
-        <input type="datetime-local" name="scheduled_at" required class="cp-input">
-        <select name="type" class="cp-select">@foreach($followUpTypes as $k => $l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</select>
-        <button type="submit" class="cp-btn-primary">Schedule</button>
-    </form>
     <form id="lost-form" method="POST" action="{{ route('org.crm.leads.status', $lead) }}" class="hidden mt-4 rounded-lg border border-red-200 bg-red-50 p-4 space-y-2">
         @csrf<input type="hidden" name="status" value="lost">
         <input type="text" name="lost_reason" placeholder="Reason (optional)" class="cp-input">
@@ -54,7 +48,20 @@
     </form>
 </div>
 
-<div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+@if($pendingFollowUp)
+<div class="mb-5 cp-card border-amber-200 bg-amber-50/50">
+    <div class="cp-card-body flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <p class="text-[11px] font-bold uppercase text-amber-700">Next action</p>
+            <p class="text-sm font-semibold text-slate-900">{{ $pendingFollowUp->typeLabel() }} · {{ $pendingFollowUp->scheduled_at->format('M d, h:i A') }}</p>
+        </div>
+        <button type="button" data-sheet-open="complete-{{ $pendingFollowUp->id }}" class="cp-btn-primary !py-2 text-xs">Complete</button>
+    </div>
+</div>
+<x-crm.complete-followup-sheet :follow-up="$pendingFollowUp" :lead="$lead" />
+@endif
+
+<div class="grid grid-cols-1 gap-5 lg:grid-cols-3 pb-20 lg:pb-0">
     <div class="lg:col-span-2 space-y-5">
         @if(!$lead->isClosed())
         <div class="cp-card cp-card-body">
@@ -70,19 +77,22 @@
         @endif
 
         <div class="cp-card">
-            <div class="cp-card-header"><h3 class="text-sm font-semibold text-slate-900">Activity</h3></div>
+            <div class="cp-card-header"><h3 class="text-sm font-semibold text-slate-900">Activity timeline</h3></div>
             <div class="px-5 py-4 space-y-0">
                 @forelse($timeline as $activity)
                     <div class="relative flex gap-3 pb-5 last:pb-0">
                         @if(!$loop->last)<div class="absolute left-[7px] top-4 h-full w-px bg-slate-200"></div>@endif
                         <div class="relative z-10 mt-1 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-white bg-brand-500 ring-2 ring-brand-100"></div>
                         <div class="min-w-0 flex-1">
-                            <p class="text-xs text-slate-400">{{ $activity->created_at->format('M d, h:i A') }}</p>
+                            <p class="text-xs text-slate-400">{{ $activity->created_at->format('M d, h:i A') }}@if($activity->user) · {{ $activity->user->name }}@endif</p>
                             <p class="text-sm font-medium text-slate-900">{{ $activity->title }}</p>
+                            @if($activity->description)
+                                <p class="mt-1 whitespace-pre-line text-sm text-slate-600">{{ $activity->description }}</p>
+                            @endif
                         </div>
                     </div>
                 @empty
-                    <p class="text-sm text-slate-500">No activity yet.</p>
+                    <p class="text-sm text-slate-500">No activity yet. Log your first follow-up on the right.</p>
                 @endforelse
             </div>
         </div>
@@ -106,6 +116,29 @@
     </div>
 
     <div class="space-y-5">
+        <div id="log-interaction" class="cp-card">
+            <div class="cp-card-header">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900">Log what happened</h3>
+                    <p class="text-xs text-slate-500">Record today’s call/visit and schedule the next one</p>
+                </div>
+            </div>
+            <div class="cp-card-body">
+                @if($pendingFollowUp)
+                    <div class="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                        Due {{ $pendingFollowUp->scheduled_at->format('M d, h:i A') }} — {{ $pendingFollowUp->typeLabel() }}
+                        @if($pendingFollowUp->isOverdue()) <span class="font-semibold">(overdue)</span>@endif
+                    </div>
+                @endif
+                <x-crm.log-interaction-form
+                    :lead="$lead"
+                    :follow-up="$pendingFollowUp"
+                    :follow-up-types="$followUpTypes"
+                    :outcomes="$outcomes"
+                />
+            </div>
+        </div>
+
         <div class="cp-card cp-card-body space-y-3 text-sm">
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Lead info</p>
             <dl class="space-y-2">
@@ -122,26 +155,52 @@
             <div class="cp-card-body">
                 @if($lead->notes)<div class="mb-3 whitespace-pre-line text-sm text-slate-700">{{ $lead->notes }}</div>@endif
                 <form method="POST" action="{{ route('org.crm.leads.notes', $lead) }}" class="flex gap-2">@csrf
-                    <input type="text" name="note" required placeholder="Add note..." class="cp-input">
+                    <input type="text" name="note" required placeholder="Quick note..." class="cp-input">
                     <button class="cp-btn-secondary">Add</button>
                 </form>
             </div>
         </div>
 
         <div class="cp-card">
-            <div class="cp-card-header"><h3 class="text-sm font-semibold text-slate-900">Follow-ups</h3></div>
+            <div class="cp-card-header"><h3 class="text-sm font-semibold text-slate-900">Temperature</h3></div>
+            <div class="cp-card-body flex flex-wrap gap-1.5">
+                @foreach(\App\Models\Lead::temperatures() as $key => $label)
+                    <form method="POST" action="{{ route('org.crm.leads.temperature', $lead) }}">@csrf
+                        <input type="hidden" name="temperature" value="{{ $key }}">
+                        <button type="submit" class="rounded-lg border px-2.5 py-1 text-xs {{ ($lead->temperature ?? 'new') === $key ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600' }}">{{ $label }}</button>
+                    </form>
+                @endforeach
+            </div>
+        </div>
+
+        <div class="cp-card">
+            <div class="cp-card-header"><h3 class="text-sm font-semibold text-slate-900">Follow-up history</h3></div>
             <div class="divide-y divide-slate-100">
                 @forelse($lead->followUps as $followUp)
                     <div class="px-5 py-3 text-sm">
-                        <p class="font-medium">{{ $followUp->typeLabel() }}</p>
-                        <p class="text-xs text-slate-500">{{ $followUp->scheduled_at->format('M d, h:i A') }}</p>
-                        <x-ui.badge :type="$followUp->isOverdue() ? 'danger' : 'neutral'" class="mt-1">{{ $followUp->displayStatus() }}</x-ui.badge>
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <p class="font-medium">{{ $followUp->typeLabel() }}</p>
+                                <p class="text-xs text-slate-500">{{ $followUp->scheduled_at->format('M d, h:i A') }}</p>
+                            </div>
+                            <x-ui.badge :type="$followUp->status === 'completed' ? 'success' : ($followUp->isOverdue() ? 'danger' : 'neutral')">{{ $followUp->displayStatus() }}</x-ui.badge>
+                        </div>
+                        @if($followUp->notes)
+                            <p class="mt-2 whitespace-pre-line rounded-md bg-slate-50 px-2 py-1.5 text-xs text-slate-600">{{ $followUp->notes }}</p>
+                        @endif
                     </div>
                 @empty
-                    <p class="px-5 py-4 text-sm text-slate-500">None scheduled.</p>
+                    <p class="px-5 py-4 text-sm text-slate-500">None scheduled yet.</p>
                 @endforelse
             </div>
         </div>
     </div>
+</div>
+
+{{-- Mobile sticky actions --}}
+<div class="cp-sticky-actions grid grid-cols-3 gap-2">
+    <button type="button" data-whatsapp-open data-lead-name="{{ $lead->name }}" data-whatsapp-url="{{ route('org.crm.leads.whatsapp', $lead) }}" class="cp-btn-success !py-2.5">WhatsApp</button>
+    <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary !py-2.5 text-center">Call</a>
+    <a href="#log-interaction" class="cp-btn-primary !py-2.5 text-center">Follow-up</a>
 </div>
 @endsection

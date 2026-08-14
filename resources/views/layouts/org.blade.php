@@ -23,10 +23,13 @@
     </aside>
 
     <div class="flex flex-1 flex-col lg:pl-60">
-        <x-org.topbar
-            :title="trim($__env->yieldContent('page-title')) ?: null"
-            :subtitle="trim($__env->yieldContent('page-subtitle')) ?: null"
-        >
+        @php
+            $pageHeaderTitle = $__env->yieldContent('page-title');
+            $pageHeaderSubtitle = $__env->yieldContent('page-subtitle');
+            $pageHeaderTitle = is_string($pageHeaderTitle) && trim($pageHeaderTitle) !== '' ? trim($pageHeaderTitle) : null;
+            $pageHeaderSubtitle = is_string($pageHeaderSubtitle) && trim($pageHeaderSubtitle) !== '' ? trim($pageHeaderSubtitle) : null;
+        @endphp
+        <x-org.topbar :title="$pageHeaderTitle" :subtitle="$pageHeaderSubtitle">
             @isset($headerActions)
                 <x-slot:actions>{{ $headerActions }}</x-slot:actions>
             @endisset
@@ -37,6 +40,9 @@
         @endif
         @if(session('error'))
             <div data-toast data-toast-type="error" class="hidden">{{ session('error') }}</div>
+        @endif
+        @if($errors->any() && ($errors->has('name') || $errors->has('phone') || $errors->has('source')))
+            <div data-toast data-toast-type="error" class="hidden">{{ $errors->first() }}</div>
         @endif
 
         <main class="flex-1 overflow-y-auto scrollbar-thin">
@@ -50,6 +56,8 @@
 <x-org.mobile-nav />
 @if(auth()->user()?->isOrganizationAdmin())
     <x-crm.lead-slideover />
+    <x-crm.lead-sheet />
+    <x-crm.whatsapp-composer action-url="#" />
 @endif
 @stack('scripts')
 </body>

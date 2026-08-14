@@ -2,7 +2,8 @@
 
 @section('title', 'WhatsApp')
 
-@php $pageTitle = 'WhatsApp'; $pageSubtitle = 'Connection & messaging'; @endphp
+@section('page-title', 'WhatsApp')
+@section('page-subtitle', 'Connection & messaging')
 
 @section('content')
 <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -20,6 +21,21 @@
             </div>
         </div>
 
+        <div class="mt-5 grid grid-cols-3 gap-3">
+            <div class="rounded-xl bg-slate-50 p-3 text-center">
+                <p class="text-[10px] font-medium uppercase text-slate-500">Messages today</p>
+                <p class="text-lg font-bold text-slate-900">{{ number_format($shellMessagesToday ?? 0) }}</p>
+            </div>
+            <div class="rounded-xl bg-slate-50 p-3 text-center">
+                <p class="text-[10px] font-medium uppercase text-slate-500">This month</p>
+                <p class="text-lg font-bold text-slate-900">{{ number_format($shellMessagesMonth ?? 0) }}</p>
+            </div>
+            <div class="rounded-xl bg-slate-50 p-3 text-center">
+                <p class="text-[10px] font-medium uppercase text-slate-500">Credits</p>
+                <p class="text-lg font-bold text-brand-600">{{ number_format($shellBalance ?? 0) }}</p>
+            </div>
+        </div>
+
         <div id="qr-container" class="hidden mt-6 rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
             <p class="mb-4 text-sm text-slate-600">Scan with WhatsApp → Linked Devices → Link a Device</p>
             <div class="inline-block rounded-xl border border-white bg-white p-3 shadow-sm">
@@ -31,7 +47,8 @@
         <div class="mt-6 flex flex-wrap gap-2">
             <button id="btn-connect" type="button" class="cp-btn-primary">Connect WhatsApp</button>
             <button id="btn-disconnect" type="button" class="cp-btn-danger {{ $connection?->isConnected() ? '' : 'hidden' }}">Disconnect</button>
-            <a href="{{ route('org.logs.index') }}" class="cp-btn-secondary">Open inbox / logs</a>
+            <a href="{{ route('org.inbox.index') }}" class="cp-btn-secondary">Open inbox</a>
+            <a href="{{ route('org.settings.index') }}#whatsapp" class="cp-btn-ghost">Settings</a>
         </div>
     </div>
 

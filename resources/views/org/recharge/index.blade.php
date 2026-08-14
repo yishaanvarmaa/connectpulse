@@ -2,22 +2,35 @@
 
 @section('title', 'Credits')
 
-@php
-    $balance = $organization->creditWallet?->balance ?? 0;
-    $pageTitle = 'Credits';
-    $pageSubtitle = number_format($balance).' available';
-@endphp
+@section('page-title', 'Credits')
+@section('page-subtitle', number_format($organization->creditWallet?->balance ?? 0).' available')
 
 @section('content')
 <div class="grid grid-cols-1 gap-5 lg:grid-cols-3 mb-5">
     <div class="cp-card cp-card-body lg:col-span-1">
         <p class="text-xs font-medium text-slate-500">Available credits</p>
-        <p class="mt-2 text-4xl font-semibold tracking-tight text-brand-600">{{ number_format($balance) }}</p>
+        <p class="mt-2 text-4xl font-semibold tracking-tight text-brand-600">{{ number_format($organization->creditWallet?->balance ?? 0) }}</p>
         <p class="mt-2 text-xs text-slate-400">1 credit = 1 WhatsApp message</p>
         <a href="mailto:support@connectpulse.cloud?subject=Credit%20Recharge%20-%20{{ urlencode($organization->company_name) }}" class="cp-btn-primary mt-5 w-full">Request recharge</a>
     </div>
 
     <div class="cp-card cp-card-body lg:col-span-2">
+        <h2 class="text-sm font-semibold text-slate-900 mb-4">Usage</h2>
+        <div class="grid grid-cols-3 gap-3 mb-5">
+            <div class="rounded-xl bg-slate-50 p-3 text-center">
+                <p class="text-[10px] font-medium uppercase text-slate-500">Today</p>
+                <p class="text-xl font-bold text-slate-900">{{ number_format($messagesToday) }}</p>
+            </div>
+            <div class="rounded-xl bg-slate-50 p-3 text-center">
+                <p class="text-[10px] font-medium uppercase text-slate-500">This month</p>
+                <p class="text-xl font-bold text-slate-900">{{ number_format($messagesMonth) }}</p>
+            </div>
+            <div class="rounded-xl bg-slate-50 p-3 text-center">
+                <p class="text-[10px] font-medium uppercase text-slate-500">Credits used</p>
+                <p class="text-xl font-bold text-slate-900">{{ number_format($usedThisMonth) }}</p>
+            </div>
+        </div>
+
         <h2 class="text-sm font-semibold text-slate-900 mb-1">Recharge plans</h2>
         <p class="text-xs text-slate-500 mb-4">Contact support or visit <a href="{{ route('pricing') }}" class="text-brand-600 hover:underline">pricing</a> to add credits.</p>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -34,7 +47,7 @@
 
 <div class="cp-table-wrap">
     <div class="cp-card-header border-b border-slate-100">
-        <h2 class="text-sm font-semibold text-slate-900">Transaction history</h2>
+        <h2 class="text-sm font-semibold text-slate-900">Credit history</h2>
     </div>
     <table class="cp-table">
         <thead>

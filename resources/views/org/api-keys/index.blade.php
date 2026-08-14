@@ -2,7 +2,8 @@
 
 @section('title', 'API')
 
-@php $pageTitle = 'API'; $pageSubtitle = 'Integration credentials'; @endphp
+@section('page-title', 'API')
+@section('page-subtitle', 'Integration credentials')
 
 @section('content')
 <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -69,6 +70,21 @@
                 @endforeach
             </div>
         </div>
+
+        <details class="cp-card group">
+            <summary class="cp-card-header cursor-pointer list-none flex items-center justify-between">
+                <h2 class="text-sm font-semibold text-slate-900">Quick start</h2>
+                <span class="text-xs text-slate-400 group-open:hidden">Show</span>
+            </summary>
+            <div class="cp-card-body pt-0">
+                <pre class="overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs text-slate-100"><code>curl -X POST {{ url('/api/v1/messages/send') }} \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "X-API-Secret: YOUR_API_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"mobile":"919876543210","message":"Hello from ConnectPulse"}'</code></pre>
+                <p class="mt-3 text-xs text-slate-500">Replace credentials from above. WhatsApp must be connected before sending.</p>
+            </div>
+        </details>
     </div>
 
     <div class="cp-card cp-card-body text-sm text-slate-600">
@@ -76,7 +92,7 @@
         <ul class="space-y-2 text-xs">
             <li>WhatsApp setup: <a href="{{ route('org.whatsapp.index') }}" class="text-brand-600 hover:underline">Connect here</a></li>
             <li>Credits: <a href="{{ route('org.recharge.index') }}" class="text-brand-600 hover:underline">Recharge</a></li>
-            <li>Logs: <a href="{{ route('org.logs.index') }}" class="text-brand-600 hover:underline">Message history</a></li>
+            <li>Logs: <a href="{{ route('org.inbox.index') }}" class="text-brand-600 hover:underline">Message inbox</a></li>
         </ul>
     </div>
 </div>

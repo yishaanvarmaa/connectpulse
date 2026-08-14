@@ -48,6 +48,14 @@ class Lead extends Model
 
     public const SOURCE_OTHER = 'other';
 
+    public const TEMP_HOT = 'hot';
+
+    public const TEMP_WARM = 'warm';
+
+    public const TEMP_COLD = 'cold';
+
+    public const TEMP_NEW = 'new';
+
     protected $fillable = [
         'organization_id',
         'created_by',
@@ -61,6 +69,7 @@ class Lead extends Model
         'estimated_value',
         'status',
         'priority',
+        'temperature',
         'notes',
         'last_contacted_at',
         'next_follow_up_at',
@@ -117,6 +126,29 @@ class Lead extends Model
         ];
     }
 
+    public static function temperatures(): array
+    {
+        return [
+            self::TEMP_HOT => 'Hot',
+            self::TEMP_WARM => 'Warm',
+            self::TEMP_COLD => 'Cold',
+            self::TEMP_NEW => 'New',
+        ];
+    }
+
+    public static function quickFilters(): array
+    {
+        return [
+            'all' => 'All',
+            'new' => 'New',
+            'needs_follow_up' => 'Needs Follow-up',
+            'overdue' => 'Overdue',
+            'hot' => 'Hot',
+            'won' => 'Won',
+            'lost' => 'Lost',
+        ];
+    }
+
     public static function openStatuses(): array
     {
         return [
@@ -142,6 +174,27 @@ class Lead extends Model
     public function priorityLabel(): string
     {
         return self::priorities()[$this->priority] ?? ucfirst($this->priority);
+    }
+
+    public function temperatureLabel(): string
+    {
+        return self::temperatures()[$this->temperature ?? self::TEMP_NEW] ?? 'New';
+    }
+
+    public function temperatureIcon(): string
+    {
+        return match ($this->temperature ?? self::TEMP_NEW) {
+            self::TEMP_HOT => '🔥',
+            self::TEMP_WARM => '🟡',
+            self::TEMP_COLD => '⚪',
+            default => '🔵',
+        };
+    }
+
+    public function isHot(): bool
+    {
+        return ($this->temperature ?? self::TEMP_NEW) === self::TEMP_HOT
+            || $this->priority === self::PRIORITY_HIGH;
     }
 
     public function isClosed(): bool

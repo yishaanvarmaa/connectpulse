@@ -16,7 +16,9 @@ use App\Http\Controllers\Org\Crm\LeadController as CrmLeadController;
 use App\Http\Controllers\Org\Crm\PipelineController as CrmPipelineController;
 use App\Http\Controllers\Org\Crm\ReportController as CrmReportController;
 use App\Http\Controllers\Org\DashboardController;
+use App\Http\Controllers\Org\InboxController;
 use App\Http\Controllers\Org\MessageLogController;
+use App\Http\Controllers\Org\SearchController;
 use App\Http\Controllers\Org\RechargeController;
 use App\Http\Controllers\Org\SettingsController;
 use App\Http\Controllers\Org\WhatsAppController;
@@ -67,6 +69,11 @@ Route::prefix('admin')->middleware(['auth', EnsureSuperAdmin::class])->name('adm
 
 Route::middleware(['auth', EnsureOrganizationAdmin::class])->name('org.')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/search', SearchController::class)->name('search');
+    Route::view('/more', 'org.more.index')->name('more');
+
+    Route::get('/inbox', [InboxController::class, 'index'])->name('inbox.index');
+    Route::redirect('/logs', '/inbox')->name('logs.index');
 
     Route::get('/whatsapp', [WhatsAppController::class, 'index'])->name('whatsapp.index');
     Route::post('/whatsapp/connect', [WhatsAppController::class, 'connect'])->name('whatsapp.connect');
@@ -78,7 +85,7 @@ Route::middleware(['auth', EnsureOrganizationAdmin::class])->name('org.')->group
 
     Route::get('/api-keys', [ApiKeyController::class, 'index'])->name('api-keys.index');
     Route::post('/api-keys/regenerate', [ApiKeyController::class, 'regenerate'])->name('api-keys.regenerate');
-    Route::get('/logs', [MessageLogController::class, 'index'])->name('logs.index');
+
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
 
@@ -100,6 +107,9 @@ Route::middleware(['auth', EnsureOrganizationAdmin::class])->name('org.')->group
         Route::post('/leads/{lead}/notes', [CrmLeadController::class, 'addNote'])->name('leads.notes');
         Route::post('/leads/{lead}/whatsapp', [CrmLeadController::class, 'sendWhatsApp'])->name('leads.whatsapp');
         Route::post('/leads/{lead}/follow-ups', [CrmLeadController::class, 'storeFollowUp'])->name('leads.follow-ups.store');
+        Route::post('/leads/{lead}/log-interaction', [CrmLeadController::class, 'logInteraction'])->name('leads.log-interaction');
+        Route::post('/leads/{lead}/temperature', [CrmLeadController::class, 'updateTemperature'])->name('leads.temperature');
+        Route::post('/leads/bulk-status', [CrmLeadController::class, 'bulkStatus'])->name('leads.bulk-status');
 
         Route::get('/pipeline', [CrmPipelineController::class, 'index'])->name('pipeline.index');
         Route::post('/pipeline/{lead}/status', [CrmPipelineController::class, 'updateStatus'])->name('pipeline.status');

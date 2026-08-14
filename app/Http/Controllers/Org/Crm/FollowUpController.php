@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Org\Crm;
 
 use App\Http\Controllers\Controller;
+use App\Models\LeadActivity;
 use App\Models\LeadFollowUp;
 use App\Services\FollowUpService;
 use App\Services\LeadWhatsAppService;
@@ -24,6 +25,10 @@ class FollowUpController extends Controller
 
         return view('org.crm.follow-ups.index', [
             'groups' => $groups,
+            'calendar' => $this->followUpService->getCalendarGroups($organization),
+            'outcomes' => LeadActivity::outcomes(),
+            'followUpTypes' => LeadFollowUp::types(),
+            'view' => $request->input('view', 'list'),
         ]);
     }
 

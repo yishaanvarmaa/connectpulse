@@ -30,6 +30,38 @@ class LeadActivity extends Model
 
     public const TYPE_UPDATED = 'updated';
 
+    public const TYPE_INTERACTION_LOGGED = 'interaction_logged';
+
+    public const OUTCOME_NO_ANSWER = 'no_answer';
+
+    public const OUTCOME_BUSY = 'busy';
+
+    public const OUTCOME_SPOKE_INTERESTED = 'spoke_interested';
+
+    public const OUTCOME_SPOKE_NOT_INTERESTED = 'spoke_not_interested';
+
+    public const OUTCOME_CALLBACK_REQUESTED = 'callback_requested';
+
+    public const OUTCOME_WHATSAPP_REPLIED = 'whatsapp_replied';
+
+    public const OUTCOME_MEETING_DONE = 'meeting_done';
+
+    public const OUTCOME_OTHER = 'other';
+
+    public static function outcomes(): array
+    {
+        return [
+            self::OUTCOME_NO_ANSWER => 'Called — no answer',
+            self::OUTCOME_BUSY => 'Busy — try again later',
+            self::OUTCOME_CALLBACK_REQUESTED => 'Asked to call back later',
+            self::OUTCOME_SPOKE_INTERESTED => 'Spoke — interested',
+            self::OUTCOME_SPOKE_NOT_INTERESTED => 'Spoke — not interested',
+            self::OUTCOME_WHATSAPP_REPLIED => 'WhatsApp conversation',
+            self::OUTCOME_MEETING_DONE => 'Meeting / demo done',
+            self::OUTCOME_OTHER => 'Other',
+        ];
+    }
+
     protected $fillable = [
         'lead_id',
         'organization_id',

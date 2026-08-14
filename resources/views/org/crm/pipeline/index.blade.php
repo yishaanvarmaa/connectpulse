@@ -6,7 +6,40 @@
 @section('page-subtitle', 'Move leads through your sales stages')
 
 @section('content')
-<div class="overflow-x-auto pb-2 -mx-4 px-4 scrollbar-thin">
+{{-- Mobile list view --}}
+<div class="space-y-4 lg:hidden">
+    @php $totalValue = collect($columns)->sum('value'); @endphp
+    <div class="cp-card cp-card-body">
+        <p class="text-xs text-slate-500">Open pipeline</p>
+        <p class="text-2xl font-bold text-slate-900">₹{{ number_format($totalValue, 0) }}</p>
+    </div>
+    @foreach($columns as $columnKey => $column)
+        @if($column['leads']->isNotEmpty())
+            <div>
+                <div class="mb-2 flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-slate-900">{{ $column['label'] }}</h2>
+                    <span class="text-xs text-slate-500">{{ $column['leads']->count() }} · ₹{{ number_format($column['value'] ?? 0, 0) }}</span>
+                </div>
+                <div class="space-y-2">
+                    @foreach($column['leads'] as $lead)
+                        <a href="{{ route('org.crm.leads.show', $lead) }}" class="cp-card cp-card-body flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-slate-900">{{ $lead->name }}</p>
+                                <p class="text-xs text-slate-500">{{ $lead->interested_product ?? $lead->phone }}</p>
+                            </div>
+                            @if($lead->estimated_value)
+                                <span class="text-sm font-semibold">₹{{ number_format($lead->estimated_value, 0) }}</span>
+                            @endif
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+    @endforeach
+</div>
+
+{{-- Desktop kanban --}}
+<div class="hidden lg:block overflow-x-auto pb-2 -mx-4 px-4 scrollbar-thin">
     <div class="flex gap-3 min-w-max">
         @foreach($columns as $columnKey => $column)
             <div class="w-72 shrink-0">

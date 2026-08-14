@@ -1,142 +1,135 @@
 @extends('layouts.org')
 
-@section('title', 'Dashboard')
+@section('title', 'Home')
 
-@php
-    $pageTitle = 'Good '. (now()->hour < 12 ? 'morning' : (now()->hour < 17 ? 'afternoon' : 'evening')) .', ' . explode(' ', auth()->user()->name)[0];
-    $pageSubtitle = "Here's what's happening with your business today.";
-@endphp
+@section('page-title')
+    Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 17 ? 'afternoon' : 'evening') }}, {{ explode(' ', auth()->user()->name)[0] }}
+@endsection
+@section('page-subtitle', "Here's what needs your attention.")
 
 @section('content')
-<div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <div></div>
-    @if(auth()->user()->isOrganizationAdmin())
-        <button type="button" data-slideover-open="lead-slideover" class="cp-btn-primary">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            New Lead
-        </button>
-    @endif
-</div>
-
-@if($stats['connection_status'] !== 'Connected')
-    <div class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        WhatsApp is not connected. <a href="{{ route('org.whatsapp.index') }}" class="font-medium underline">Connect now</a> to send messages.
+@if(($messagingStats['connection_status'] ?? $stats['connection_status'] ?? '') !== 'Connected')
+    <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        WhatsApp offline. <a href="{{ route('org.whatsapp.index') }}" class="font-medium underline">Connect</a> to send messages.
     </div>
 @endif
 
-@if(auth()->user()->isOrganizationAdmin() && isset($crmStats))
-    {{-- CRM Today strip --}}
-    <div class="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <x-ui.stat label="Follow-ups today" :value="number_format($crmStats['follow_ups_today'])" />
-        <x-ui.stat label="Overdue" :value="number_format($crmStats['overdue_follow_ups'])" :hint="$crmStats['overdue_follow_ups'] > 0 ? 'Needs attention' : null" />
-        <x-ui.stat label="Open leads" :value="number_format($crmStats['open_leads'])" />
-        <x-ui.stat label="Won revenue" :value="'₹'.number_format($crmStats['won_revenue'], 0)" />
+@if(isset($crmStats))
+    {{-- Next action first --}}
+    <div class="mb-5">
+        <x-crm.next-action-card :action="$nextAction ?? null" />
     </div>
 
-    <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
-        {{-- Follow-ups today --}}
-        <div class="xl:col-span-2 cp-card">
+    {{-- Today strip --}}
+    <div class="mb-5">
+        <h2 class="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Today</h2>
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <a href="{{ route('org.crm.follow-ups.index') }}" class="rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-center hover:border-red-300">
+                <p class="text-[10px] font-semibold uppercase text-red-600">Overdue</p>
+                <p class="text-xl font-bold text-red-900">{{ $crmStats['overdue_follow_ups'] }}</p>
+            </a>
+            <a href="{{ route('org.crm.follow-ups.index') }}" class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-center hover:border-amber-300">
+                <p class="text-[10px] font-semibold uppercase text-amber-700">Follow-ups</p>
+                <p class="text-xl font-bold text-amber-900">{{ $crmStats['follow_ups_today'] }}</p>
+            </a>
+            <a href="{{ route('org.crm.leads.index', ['view' => 'new']) }}" class="rounded-xl border border-brand-200 bg-brand-50 px-3 py-3 text-center hover:border-brand-300">
+                <p class="text-[10px] font-semibold uppercase text-brand-700">New leads</p>
+                <p class="text-xl font-bold text-brand-900">{{ $newLeadsCount ?? $crmStats['new_leads'] }}</p>
+            </a>
+            <a href="{{ route('org.crm.pipeline.index') }}" class="rounded-xl border border-violet-200 bg-violet-50 px-3 py-3 text-center hover:border-violet-300">
+                <p class="text-[10px] font-semibold uppercase text-violet-700">Demos</p>
+                <p class="text-xl font-bold text-violet-900">{{ $demosToday ?? 0 }}</p>
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        {{-- Today's follow-ups --}}
+        <div class="cp-card">
             <div class="cp-card-header">
-                <h2 class="text-sm font-semibold text-slate-900">Follow-ups today</h2>
-                <a href="{{ route('org.crm.follow-ups.index') }}" class="text-xs font-medium text-brand-600 hover:text-brand-700">View all →</a>
+                <h2 class="text-sm font-semibold text-slate-900">Today's follow-ups</h2>
+                <a href="{{ route('org.crm.follow-ups.index') }}" class="text-xs font-medium text-brand-600">View all →</a>
             </div>
             <div class="divide-y divide-slate-100">
-                @forelse($followUpsToday ?? [] as $followUp)
+                @forelse(($followUpGroups['today'] ?? collect()) as $followUp)
                     @php $lead = $followUp->lead; @endphp
-                    <div class="flex items-center gap-3 px-4 py-3 sm:px-5 hover:bg-slate-50/80">
-                        <div class="w-12 shrink-0 text-xs font-medium text-slate-500">{{ $followUp->scheduled_at->format('h:i A') }}</div>
-                        <x-ui.avatar :name="$lead->name" />
+                    <div class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/80">
+                        <span class="w-14 shrink-0 text-xs font-semibold text-slate-500">{{ $followUp->scheduled_at->format('h:i A') }}</span>
                         <div class="min-w-0 flex-1">
-                            <a href="{{ route('org.crm.leads.show', $lead) }}" class="truncate text-sm font-medium text-slate-900 hover:text-brand-600">{{ $lead->name }}</a>
-                            <p class="truncate text-xs text-slate-500">{{ $lead->interested_product ?? 'No product' }} · {{ $followUp->typeLabel() }}</p>
+                            <a href="{{ route('org.crm.leads.show', $lead) }}" class="block truncate text-sm font-medium text-slate-900">{{ $lead->name }}</a>
+                            <p class="truncate text-xs text-slate-500">{{ $followUp->typeLabel() }}</p>
                         </div>
-                        @if($lead->estimated_value)
-                            <span class="hidden sm:block text-sm font-medium text-slate-700">₹{{ number_format($lead->estimated_value, 0) }}</span>
-                        @endif
                         <div class="flex shrink-0 gap-1">
-                            <a href="{{ route('org.crm.leads.show', $lead) }}#whatsapp-form" class="cp-btn-success !px-2 !py-1.5 text-xs">WA</a>
-                            <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary !px-2 !py-1.5 text-xs">Call</a>
+                            <button type="button" data-whatsapp-open data-lead-name="{{ $lead->name }}" data-whatsapp-url="{{ route('org.crm.leads.whatsapp', $lead) }}" class="cp-btn-success !px-2 !py-1 text-xs">WA</button>
+                            <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary !px-2 !py-1 text-xs">Call</a>
+                            <button type="button" data-sheet-open="complete-{{ $followUp->id }}" class="cp-btn-primary !px-2 !py-1 text-xs">Done</button>
                         </div>
                     </div>
+                    <x-crm.complete-followup-sheet :follow-up="$followUp" :lead="$lead" />
                 @empty
-                    <div class="px-5 py-8 text-center text-sm text-slate-500">No follow-ups scheduled for today.</div>
+                    <div class="px-5 py-6 text-center text-sm text-slate-500">No follow-ups today. You're caught up.</div>
                 @endforelse
             </div>
         </div>
 
-        {{-- Messaging stats --}}
-        <div class="space-y-5">
-            <div class="cp-card cp-card-body">
-                <p class="text-xs font-medium text-slate-500">Messaging</p>
-                <div class="mt-3 space-y-2.5">
-                    <div class="flex justify-between text-sm"><span class="text-slate-600">Credits</span><span class="font-semibold">{{ number_format($stats['balance']) }}</span></div>
-                    <div class="flex justify-between text-sm"><span class="text-slate-600">Messages today</span><span class="font-semibold">{{ number_format($stats['messages_today']) }}</span></div>
-                    <div class="flex justify-between text-sm"><span class="text-slate-600">Success rate</span><span class="font-semibold">{{ $stats['success_rate'] }}%</span></div>
-                    <div class="flex justify-between text-sm"><span class="text-slate-600">WhatsApp</span><x-ui.badge :type="$stats['connection_status'] === 'Connected' ? 'success' : 'neutral'">{{ $stats['connection_status'] }}</x-ui.badge></div>
+        {{-- Pipeline --}}
+        <div class="cp-card">
+            <div class="cp-card-header">
+                <h2 class="text-sm font-semibold text-slate-900">Pipeline</h2>
+                <a href="{{ route('org.crm.pipeline.index') }}" class="text-xs font-medium text-brand-600">Open →</a>
+            </div>
+            <div class="cp-card-body pt-0">
+                <div class="mb-4 flex items-baseline justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-slate-900">₹{{ number_format($pipelineSummary['total_value'] ?? 0, 0) }}</p>
+                        <p class="text-xs text-slate-500">{{ $pipelineSummary['open_count'] ?? 0 }} open leads</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    @foreach(array_slice($pipelineSummary['stages'] ?? [], 0, 6) as $stage)
+                        @if($stage['count'] > 0)
+                            <div class="rounded-lg bg-slate-50 px-2.5 py-2">
+                                <p class="text-[10px] font-medium uppercase text-slate-500">{{ $stage['label'] }}</p>
+                                <p class="text-sm font-semibold text-slate-900">{{ $stage['count'] }}</p>
+                            </div>
+                        @endif
+                    @endforeach
                 </div>
             </div>
-
-            @if(($followUpsOverdue ?? collect())->count() > 0)
-                <div class="rounded-xl border border-red-200 bg-red-50 p-4">
-                    <p class="text-sm font-semibold text-red-800">{{ $followUpsOverdue->count() }} overdue follow-up{{ $followUpsOverdue->count() > 1 ? 's' : '' }}</p>
-                    <a href="{{ route('org.crm.follow-ups.index') }}" class="mt-1 inline-block text-xs font-medium text-red-700 underline">Review now →</a>
-                </div>
-            @endif
         </div>
     </div>
 
-    {{-- Lead sources --}}
-    @if(count($sourceAnalytics ?? []) > 0)
-        <div class="mt-5 cp-card">
-            <div class="cp-card-header">
-                <h2 class="text-sm font-semibold text-slate-900">Lead sources</h2>
-                <a href="{{ route('org.crm.reports.index') }}" class="text-xs font-medium text-brand-600">Reports →</a>
+    {{-- Performance --}}
+    <div class="mt-5">
+        <h2 class="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Performance</h2>
+        <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <x-ui.stat label="Won revenue" :value="'₹'.number_format($crmStats['won_revenue'], 0)" />
+            <x-ui.stat label="Conversion" :value="$crmStats['conversion_rate'].'%'" />
+            <x-ui.stat label="Open leads" :value="number_format($crmStats['open_leads'])" />
+            <x-ui.stat label="Total leads" :value="number_format($crmStats['total_leads'])" />
+        </div>
+    </div>
+
+    {{-- Recent leads --}}
+    @if(($recentLeads ?? collect())->isNotEmpty())
+        <div class="mt-5">
+            <div class="mb-3 flex items-center justify-between">
+                <h2 class="text-sm font-semibold text-slate-900">Recent leads</h2>
+                <a href="{{ route('org.crm.leads.index') }}" class="text-xs text-brand-600">View all →</a>
             </div>
-            <div class="grid gap-px bg-slate-100 sm:grid-cols-2 lg:grid-cols-4">
-                @foreach(array_slice($sourceAnalytics, 0, 4) as $row)
-                    <div class="bg-white px-4 py-3">
-                        <p class="text-xs font-medium text-slate-500">{{ $row['source_label'] }}</p>
-                        <p class="mt-1 text-lg font-semibold text-slate-900">{{ $row['total'] }}</p>
-                        <p class="text-xs text-slate-500">{{ $row['won'] }} won · {{ $row['conversion_rate'] }}%</p>
-                    </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+                @foreach($recentLeads as $lead)
+                    <x-crm.lead-card :lead="$lead" />
                 @endforeach
             </div>
         </div>
     @endif
 @else
-    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4 mb-5">
+    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <x-ui.stat label="Credits" :value="number_format($stats['balance'])" />
         <x-ui.stat label="Messages today" :value="number_format($stats['messages_today'])" />
         <x-ui.stat label="This month" :value="number_format($stats['messages_this_month'])" />
         <x-ui.stat label="Success rate" :value="$stats['success_rate'].'%'" />
     </div>
-@endif
-
-{{-- Recent messages --}}
-<div class="mt-5 cp-card">
-    <div class="cp-card-header">
-        <h2 class="text-sm font-semibold text-slate-900">Recent messages</h2>
-        <a href="{{ route('org.logs.index') }}" class="text-xs font-medium text-brand-600">View logs →</a>
-    </div>
-    <div class="divide-y divide-slate-100">
-        @forelse($recentLogs as $log)
-            <div class="flex items-start gap-3 px-4 py-3 sm:px-5">
-                <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium text-slate-900">{{ $log->mobile }}</p>
-                    <p class="mt-0.5 truncate text-xs text-slate-500">{{ Str::limit($log->message, 90) }}</p>
-                </div>
-                <div class="shrink-0 text-right">
-                    <x-ui.badge :type="$log->status">{{ ucfirst($log->status) }}</x-ui.badge>
-                    <p class="mt-1 text-[11px] text-slate-400">{{ $log->created_at->format('M d, H:i') }}</p>
-                </div>
-            </div>
-        @empty
-            <div class="px-5 py-8 text-center text-sm text-slate-500">No messages sent yet.</div>
-        @endforelse
-    </div>
-</div>
-
-@if(auth()->user()->isOrganizationAdmin())
-    <x-crm.lead-slideover />
 @endif
 @endsection

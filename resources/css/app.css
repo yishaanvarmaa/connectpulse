@@ -106,6 +106,34 @@
     .cp-section-label {
         @apply px-2.5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-wider text-slate-400;
     }
+
+    .cp-mobile-nav-item {
+        @apply flex flex-col items-center justify-center gap-0.5 text-[10px] text-slate-500 min-h-[44px];
+    }
+
+    .cp-mobile-nav-active {
+        @apply text-brand-600 font-semibold;
+    }
+
+    .cp-mobile-nav-fab {
+        @apply text-brand-600;
+    }
+
+    .cp-filter-chip {
+        @apply inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600;
+    }
+
+    .cp-filter-chip-active {
+        @apply border-brand-500 bg-brand-50 text-brand-700;
+    }
+
+    .cp-sticky-actions {
+        @apply fixed inset-x-0 bottom-16 z-20 border-t border-slate-200 bg-white/95 backdrop-blur px-4 py-3 lg:hidden;
+    }
+
+    .safe-area-pb {
+        padding-bottom: env(safe-area-inset-bottom, 0);
+    }
 }
 
 @layer utilities {

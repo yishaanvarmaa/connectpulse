@@ -34,6 +34,7 @@ class LeadService
                 'estimated_value' => $data['estimated_value'] ?? null,
                 'status' => $data['status'] ?? Lead::STATUS_NEW,
                 'priority' => $data['priority'] ?? Lead::PRIORITY_MEDIUM,
+                'temperature' => $data['temperature'] ?? Lead::TEMP_NEW,
                 'notes' => $data['notes'] ?? null,
                 'next_follow_up_at' => $data['next_follow_up_at'] ?? null,
             ]);
@@ -215,6 +216,29 @@ class LeadService
 
         if (! empty($filters['created_to'])) {
             $query->whereDate('created_at', '<=', $filters['created_to']);
+        }
+
+        if (! empty($filters['view'])) {
+            match ($filters['view']) {
+                'new' => $query->where('status', Lead::STATUS_NEW),
+                'won' => $query->where('status', Lead::STATUS_WON),
+                'lost' => $query->where('status', Lead::STATUS_LOST),
+                'hot' => $query->where(function ($q) {
+                    $q->where('temperature', Lead::TEMP_HOT)
+                        ->orWhere('priority', Lead::PRIORITY_HIGH);
+                }),
+                'needs_follow_up' => $query->whereIn('status', Lead::openStatuses())
+                    ->where(function ($q) {
+                        $q->whereNotNull('next_follow_up_at')
+                            ->orWhereHas('followUps', fn ($fq) => $fq->pending());
+                    }),
+                'overdue' => $query->whereIn('status', Lead::openStatuses())
+                    ->where(function ($q) {
+                        $q->where('next_follow_up_at', '<', now())
+                            ->orWhereHas('followUps', fn ($fq) => $fq->overdue());
+                    }),
+                default => null,
+            };
         }
 
         $sort = $filters['sort'] ?? 'latest';
