@@ -19,7 +19,7 @@
                     ConnectPulse brings your leads, WhatsApp conversations, follow-ups and sales pipeline into one workspace.
                 </p>
                 <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <a href="{{ route('contact') }}" class="mkt-btn mkt-btn--primary">Start Free</a>
+                    <a href="{{ route('register') }}" class="mkt-btn mkt-btn--primary">Start Free</a>
                     <a href="#how-it-works" class="mkt-btn mkt-btn--ghost">See How It Works</a>
                 </div>
                 <div class="mkt-tag-row mt-6">
@@ -354,7 +354,7 @@
             Capture every lead. Follow up on time. Keep WhatsApp conversations organized. Close more business.
         </p>
         <div class="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-            <a href="{{ route('contact') }}" class="mkt-btn mkt-btn--primary !px-10 !py-4 !text-base">Start with ConnectPulse</a>
+            <a href="{{ route('register') }}" class="mkt-btn mkt-btn--primary !px-10 !py-4 !text-base">Start with ConnectPulse</a>
             <a href="{{ route('contact') }}" class="mkt-btn mkt-btn--ghost !px-10 !py-4">Talk to Sales</a>
         </div>
     </div>

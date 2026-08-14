@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\OrganizationApiTestController;
 use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\OrganizationWhatsAppController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Org\ApiKeyController;
 use App\Http\Controllers\Org\Crm\DashboardController as CrmDashboardController;
 use App\Http\Controllers\Org\Crm\FollowUpController as CrmFollowUpController;
@@ -36,6 +37,8 @@ Route::get('/refund-policy', [MarketingController::class, 'refund'])->name('refu
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
+    Route::get('/register', [RegisterController::class, 'show'])->name('register');
+    Route::post('/register', [RegisterController::class, 'store']);
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])

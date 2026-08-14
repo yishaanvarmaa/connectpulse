@@ -34,7 +34,7 @@
                         <a href="{{ auth()->user()->isSuperAdmin() ? route('admin.dashboard') : route('org.dashboard') }}" class="mkt-btn mkt-btn--primary !px-4 !py-2 text-xs sm:text-sm">Dashboard</a>
                     @else
                         <a href="{{ route('login') }}" class="mkt-nav__login hidden sm:inline">Login</a>
-                        <a href="{{ route('contact') }}" class="mkt-btn mkt-btn--primary hidden !px-4 !py-2 text-xs sm:inline-flex sm:text-sm">Get Started</a>
+                        <a href="{{ route('register') }}" class="mkt-btn mkt-btn--primary hidden !px-4 !py-2 text-xs sm:inline-flex sm:text-sm">Get Started</a>
                     @endauth
                     <button id="mkt-nav-toggle" type="button" class="rounded-lg p-2 text-white/80 hover:bg-white/10 md:hidden" aria-expanded="false" aria-label="Menu">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -49,7 +49,7 @@
                     <a href="{{ route('home') }}#whatsapp" class="mkt-nav__link">WhatsApp</a>
                     <a href="{{ route('pricing') }}" class="mkt-nav__link">Pricing</a>
                     <a href="{{ route('login') }}" class="mkt-nav__link">Login</a>
-                    <a href="{{ route('contact') }}" class="mkt-btn mkt-btn--primary mt-2 text-center">Get Started</a>
+                    <a href="{{ route('register') }}" class="mkt-btn mkt-btn--primary mt-2 text-center">Get Started</a>
                 </nav>
             </div>
         </div>
