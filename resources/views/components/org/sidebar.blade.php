@@ -8,11 +8,9 @@
 <div class="flex h-full flex-col">
     <div class="flex h-14 items-center gap-2.5 border-b border-slate-100 px-4">
         <a href="{{ route('org.dashboard') }}" class="flex items-center gap-2.5 min-w-0">
-            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-600 shadow-sm">
-                <span class="text-xs font-bold text-white">CP</span>
-            </div>
+            <x-brand.icon size="sm" class="shrink-0" />
             <div class="min-w-0">
-                <p class="truncate text-sm font-semibold text-slate-900">ConnectPulse</p>
+                <x-brand.wordmark size="sm" theme="light" class="truncate !text-sm !font-semibold" />
                 <p class="truncate text-[11px] text-slate-500">{{ $orgName }}</p>
             </div>
         </a>

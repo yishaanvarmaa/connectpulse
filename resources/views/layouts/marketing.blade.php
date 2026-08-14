@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="@yield('meta_description', 'Manage leads, WhatsApp conversations, follow-ups and sales pipeline in one simple CRM with ConnectPulse.')">
     <title>@yield('title', 'ConnectPulse | CRM + WhatsApp for Businesses')</title>
+    <x-brand.favicon />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/marketing.js'])
@@ -14,12 +15,7 @@
     <header id="mkt-nav" class="mkt-nav mkt-nav--dark">
         <div class="mkt-nav__bar">
             <div class="mkt-wrap mkt-nav__inner">
-                <a href="{{ route('home') }}" class="flex items-center gap-2.5">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#635bff] shadow-lg shadow-[#635bff]/30">
-                        <span class="text-sm font-bold text-white">CP</span>
-                    </div>
-                    <span class="mkt-nav__logo-text text-lg font-bold text-white">ConnectPulse</span>
-                </a>
+                <x-brand.logo href="{{ route('home') }}" theme="dark" size="md" class="mkt-nav__logo" />
 
                 <nav class="hidden items-center gap-7 md:flex">
                     <a href="{{ route('home') }}#product" class="mkt-nav__link">Product</a>
@@ -61,12 +57,7 @@
         <div class="mkt-wrap py-14">
             <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
                 <div class="lg:col-span-2">
-                    <div class="mb-4 flex items-center gap-2.5">
-                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#635bff]">
-                            <span class="text-xs font-bold text-white">CP</span>
-                        </div>
-                        <span class="text-lg font-bold text-white">ConnectPulse</span>
-                    </div>
+                    <x-brand.logo href="{{ route('home') }}" theme="dark" size="sm" :mobile-wordmark="false" class="mb-4" />
                     <p class="max-w-sm text-sm leading-relaxed text-slate-500">
                         The sales workspace for businesses that sell through conversations. Leads, WhatsApp, follow-ups and pipeline — unified.
                     </p>

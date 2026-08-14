@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin') — ConnectPulse</title>
+    <x-brand.favicon />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -12,8 +13,11 @@
 <div class="flex min-h-screen bg-slate-50">
     <aside class="relative hidden w-56 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
         <div class="flex h-14 items-center gap-2 border-b border-slate-100 px-4">
-            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-xs font-bold text-white">CP</div>
-            <div><p class="text-sm font-semibold text-slate-900">ConnectPulse</p><p class="text-[10px] text-slate-500">Super Admin</p></div>
+            <x-brand.icon size="sm" class="shrink-0" />
+            <div>
+                <x-brand.wordmark size="sm" theme="light" class="!text-sm !font-semibold" />
+                <p class="text-[10px] text-slate-500">Super Admin</p>
+            </div>
         </div>
         <nav class="flex-1 space-y-0.5 p-3">
             <a href="{{ route('admin.dashboard') }}" class="cp-sidebar-link {{ request()->routeIs('admin.dashboard') ? 'cp-sidebar-link-active' : '' }}">Dashboard</a>

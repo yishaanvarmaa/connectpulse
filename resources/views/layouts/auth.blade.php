@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Sign in') — ConnectPulse</title>
+    <x-brand.favicon />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -16,12 +17,7 @@
         <div class="pointer-events-none absolute -right-20 top-20 h-80 w-80 rounded-full bg-[#635bff]/30 blur-[100px]"></div>
         <div class="pointer-events-none absolute -left-10 bottom-20 h-60 w-60 rounded-full bg-blue-500/10 blur-[80px]"></div>
         <div class="relative">
-            <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5">
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#635bff] shadow-lg shadow-[#635bff]/30">
-                    <span class="text-sm font-bold text-white">CP</span>
-                </div>
-                <span class="text-lg font-bold text-white">ConnectPulse</span>
-            </a>
+            <x-brand.logo href="{{ route('home') }}" theme="dark" size="md" :mobile-wordmark="false" />
             <h1 class="mt-12 max-w-md text-4xl font-extrabold leading-tight tracking-tight text-white xl:text-[2.75rem]">
                 @yield('brand-headline', 'Never let a lead go cold.')
             </h1>
@@ -43,10 +39,7 @@
     {{-- Form panel --}}
     <div class="flex min-h-screen flex-col px-5 py-8 sm:px-8 lg:px-12 xl:px-20">
         <div class="flex items-center justify-between lg:justify-end">
-            <a href="{{ route('home') }}" class="inline-flex items-center gap-2 lg:hidden">
-                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#635bff] text-xs font-bold text-white">CP</div>
-                <span class="font-bold text-slate-900">ConnectPulse</span>
-            </a>
+            <x-brand.logo href="{{ route('home') }}" theme="light" size="sm" class="lg:hidden" />
             <a href="{{ route('home') }}" class="text-sm font-medium text-slate-500 hover:text-[#635bff]">← Website</a>
         </div>
 

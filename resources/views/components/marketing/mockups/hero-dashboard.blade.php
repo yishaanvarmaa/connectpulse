@@ -5,7 +5,7 @@
         <div class="flex min-h-[340px] sm:min-h-[420px] lg:min-h-[480px]">
             <div class="hidden w-16 shrink-0 border-r border-white/5 bg-[#0d1020] lg:block">
                 <div class="flex h-14 items-center justify-center border-b border-white/5">
-                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#635bff] text-[10px] font-bold">CP</div>
+                    <x-brand.icon size="sm" />
                 </div>
                 @foreach(['Home', 'Leads', 'Inbox', 'Pipeline', 'Reports'] as $i => $n)
                     <div class="mx-2 mt-2 rounded-lg px-2 py-2 text-center text-[9px] font-medium {{ $i === 0 ? 'bg-[#635bff]/20 text-[#8b7cff]' : 'text-slate-600' }}">{{ $n }}</div>
