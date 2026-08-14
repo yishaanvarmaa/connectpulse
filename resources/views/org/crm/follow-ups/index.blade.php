@@ -12,7 +12,7 @@
 @section('title', 'Follow-ups')
 
 @section('nav')
-    <x-org-nav />
+    <x-crm-nav />
 @endsection
 
 @section('content')

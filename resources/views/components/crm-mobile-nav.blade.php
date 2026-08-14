@@ -1,4 +1,4 @@
-@if(request()->routeIs('org.crm.*'))
+@if(auth()->user()?->isOrganizationAdmin() && request()->routeIs('org.crm.*'))
 <nav class="fixed bottom-0 inset-x-0 z-30 border-t border-slate-200 bg-white md:hidden">
     <div class="grid grid-cols-5 h-16">
         <a href="{{ route('org.crm.dashboard') }}" class="flex flex-col items-center justify-center text-xs {{ request()->routeIs('org.crm.dashboard') ? 'text-brand-600' : 'text-slate-500' }}">

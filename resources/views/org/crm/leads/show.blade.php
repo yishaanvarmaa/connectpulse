@@ -3,7 +3,7 @@
 @section('title', $lead->name)
 
 @section('nav')
-    <x-org-nav />
+    <x-crm-nav />
 @endsection
 
 @section('content')

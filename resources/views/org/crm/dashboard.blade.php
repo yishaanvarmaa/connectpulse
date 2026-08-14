@@ -3,7 +3,7 @@
 @section('title', 'CRM Dashboard')
 
 @section('nav')
-    <x-org-nav />
+    <x-crm-nav />
 @endsection
 
 @section('content')
