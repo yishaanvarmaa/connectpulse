@@ -7,7 +7,7 @@ use App\Models\Organization;
 
 class SmsProvider implements MessagingProviderInterface
 {
-    public function send(Organization $organization, string $mobile, string $message): array
+    public function send(Organization $organization, string $mobile, string $message, ?string $mediaUrl = null): array
     {
         return [
             'success' => false,

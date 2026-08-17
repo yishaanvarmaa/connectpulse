@@ -31,7 +31,7 @@ npm run build
 
 # Start services (separate terminals)
 php artisan serve
-php artisan queue:work --queue=messages,default
+php artisan queue:work --queue=campaigns,messages,default
 cd whatsapp-bridge && npm start
 ```
 

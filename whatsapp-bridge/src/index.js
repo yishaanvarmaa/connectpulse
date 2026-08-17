@@ -45,11 +45,11 @@ app.get('/status', (req, res) => {
 });
 
 app.post('/send', async (req, res) => {
-    const { organization_id, mobile, message } = req.body;
-    if (!organization_id || !mobile || !message) {
-        return res.status(400).json({ success: false, error: 'organization_id, mobile, and message are required' });
+    const { organization_id, mobile, message, media_url: mediaUrl } = req.body;
+    if (!organization_id || !mobile || (!message && !mediaUrl)) {
+        return res.status(400).json({ success: false, error: 'organization_id, mobile, and message or media_url are required' });
     }
-    const result = await sessionManager.sendMessage(organization_id, mobile, message);
+    const result = await sessionManager.sendMessage(organization_id, mobile, message || '', mediaUrl || null);
     res.json(result);
 });
 

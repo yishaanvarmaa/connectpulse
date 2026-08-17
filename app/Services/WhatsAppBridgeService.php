@@ -17,13 +17,19 @@ class WhatsAppBridgeService
         $this->secret = config('connectpulse.whatsapp_bridge_secret', '');
     }
 
-    public function sendMessage(int $organizationId, string $mobile, string $message): array
+    public function sendMessage(int $organizationId, string $mobile, string $message, ?string $mediaUrl = null): array
     {
-        return $this->request('POST', '/send', [
+        $payload = [
             'organization_id' => $organizationId,
             'mobile' => $mobile,
             'message' => $message,
-        ]);
+        ];
+
+        if ($mediaUrl) {
+            $payload['media_url'] = $mediaUrl;
+        }
+
+        return $this->request('POST', '/send', $payload);
     }
 
     public function getStatus(int $organizationId): array

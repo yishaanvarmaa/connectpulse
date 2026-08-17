@@ -62,7 +62,23 @@ Caddy snippet alone: [`deploy/Caddyfile.connectpulse`](../deploy/Caddyfile.conne
 
 ```bash
 cd /var/www/connectpulse
-DEPLOY_BRANCH=master ./deploy/deploy.sh
+DEPLOY_BRANCH=cursor/campaign-queue-bulk-messaging ./deploy/deploy.sh
+# After campaigns are merged to master:
+# DEPLOY_BRANCH=master ./deploy/deploy.sh
+```
+
+**Campaigns feature:** The deploy script skips WhatsApp bridge restart by default so existing sessions stay connected. Set `DEPLOY_RESTART_BRIDGE=1` only when bridge code changed (e.g. image support). Update Supervisor queue config once:
+
+```bash
+sudo cp deploy/supervisor-queue.conf /etc/supervisor/conf.d/connectpulse-queue.conf
+sudo supervisorctl reread && sudo supervisorctl update && sudo supervisorctl restart connectpulse-queue:*
+```
+
+Ensure Laravel scheduler runs (for scheduled campaigns):
+
+```bash
+# crontab -e (www-data or deploy user)
+* * * * * cd /var/www/connectpulse && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 ### After first deploy

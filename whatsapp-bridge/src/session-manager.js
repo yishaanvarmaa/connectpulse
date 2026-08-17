@@ -434,7 +434,7 @@ class SessionManager {
         }
     }
 
-    async sendMessage(organizationId, mobile, message) {
+    async sendMessage(organizationId, mobile, message, mediaUrl = null) {
         const id = String(organizationId);
         const session = this.getSession(id);
 
@@ -448,7 +448,9 @@ class SessionManager {
             const jid = await this.resolveJid(session.sock, mobile);
             await this.prepareSession(session.sock, jid);
 
-            const content = { text: String(message) };
+            const content = mediaUrl
+                ? { image: { url: String(mediaUrl) }, caption: String(message || '') }
+                : { text: String(message) };
             const result = await session.sock.sendMessage(jid, content);
 
             if (result?.key) {

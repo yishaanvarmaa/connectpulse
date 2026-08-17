@@ -14,9 +14,9 @@ class WhatsAppWebProvider implements MessagingProviderInterface
         private WhatsAppBridgeService $bridge
     ) {}
 
-    public function send(Organization $organization, string $mobile, string $message): array
+    public function send(Organization $organization, string $mobile, string $message, ?string $mediaUrl = null): array
     {
-        $result = $this->bridge->sendMessage((int) $organization->getKey(), $mobile, $message);
+        $result = $this->bridge->sendMessage((int) $organization->getKey(), $mobile, $message, $mediaUrl);
 
         if (! ($result['success'] ?? false)) {
             return [

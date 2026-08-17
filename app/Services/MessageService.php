@@ -8,6 +8,7 @@ use App\Models\MessageLog;
 use App\Models\Organization;
 use App\Services\Messaging\WhatsAppWebProvider;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class MessageService
@@ -159,7 +160,12 @@ class MessageService
             return;
         }
 
-        $result = $this->provider->send($organization, $log->mobile, $log->message);
+        $mediaUrl = null;
+        if ($log->media_path) {
+            $mediaUrl = url(Storage::disk('public')->url($log->media_path));
+        }
+
+        $result = $this->provider->send($organization, $log->mobile, $log->message, $mediaUrl);
 
         if ($result['success']) {
             $log->update([

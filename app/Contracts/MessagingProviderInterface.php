@@ -6,7 +6,7 @@ use App\Models\Organization;
 
 interface MessagingProviderInterface
 {
-    public function send(Organization $organization, string $mobile, string $message): array;
+    public function send(Organization $organization, string $mobile, string $message, ?string $mediaUrl = null): array;
 
     public function getStatus(Organization $organization): array;
 

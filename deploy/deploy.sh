@@ -27,6 +27,7 @@ cd ..
 
 echo "==> Running migrations"
 php artisan migrate --force
+php artisan storage:link --force 2>/dev/null || true
 
 echo "==> Optimizing Laravel"
 php artisan config:cache
@@ -36,7 +37,11 @@ php artisan event:cache
 
 echo "==> Restarting services"
 sudo supervisorctl restart connectpulse-queue:* || true
-pm2 restart connectpulse-bridge || pm2 start whatsapp-bridge/ecosystem.config.cjs
+if [ "${DEPLOY_RESTART_BRIDGE:-0}" = "1" ]; then
+  pm2 restart connectpulse-bridge || pm2 start whatsapp-bridge/ecosystem.config.cjs
+else
+  echo "    Skipping WhatsApp bridge restart (set DEPLOY_RESTART_BRIDGE=1 to restart)"
+fi
 sudo systemctl reload php8.4-fpm 2>/dev/null || sudo systemctl reload php-fpm 2>/dev/null || true
 # Prefer Caddy (Bluehost + OnlyOffice). Fall back to nginx if present.
 if systemctl is-active --quiet caddy 2>/dev/null; then
