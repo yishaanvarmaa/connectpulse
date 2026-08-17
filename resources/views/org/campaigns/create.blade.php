@@ -93,8 +93,8 @@
             <h2 class="text-sm font-semibold text-slate-900">3. Message</h2>
         </div>
         <div class="cp-card-body space-y-2">
-            <textarea name="message_body" id="message-body" rows="5" required class="cp-input" placeholder="Hello {{name}}, ...">{{ old('message_body') }}</textarea>
-            <p class="text-xs text-slate-500">Use <code class="rounded bg-slate-100 px-1">{{ '{{name}}' }}</code> for personalization.</p>
+            <textarea name="message_body" id="message-body" rows="5" required class="cp-input" placeholder="Hello @{{name}}, ...">{{ old('message_body') }}</textarea>
+            <p class="text-xs text-slate-500">Use <code class="rounded bg-slate-100 px-1">@{{name}}</code> for personalization.</p>
         </div>
     </section>
 
