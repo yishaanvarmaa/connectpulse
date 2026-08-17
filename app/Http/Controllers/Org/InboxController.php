@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Org;
 
 use App\Http\Controllers\Controller;
+use App\Models\CampaignRecipient;
 use App\Models\Lead;
 use App\Models\MessageLog;
 use Illuminate\Http\Request;
@@ -38,6 +39,7 @@ class InboxController extends Controller
 
         $thread = collect();
         $activeLead = null;
+        $activeCampaign = null;
 
         if ($selectedMobile) {
             $thread = MessageLog::query()
@@ -55,6 +57,13 @@ class InboxController extends Controller
                         ->orWhere('phone', 'like', '%'.substr($selectedMobile, -10));
                 })
                 ->first();
+
+            $activeCampaign = CampaignRecipient::query()
+                ->where('phone', $selectedMobile)
+                ->whereHas('campaign', fn ($q) => $q->where('organization_id', $organization->id))
+                ->with('campaign')
+                ->latest('sent_at')
+                ->first();
         }
 
         return view('org.inbox.index', [
@@ -64,6 +73,7 @@ class InboxController extends Controller
             'selectedMobile' => $selectedMobile,
             'thread' => $thread,
             'activeLead' => $activeLead,
+            'activeCampaign' => $activeCampaign,
         ]);
     }
 }

@@ -107,6 +107,14 @@
                 @if($activeLead->next_follow_up_at)
                     <p class="mt-3 text-xs text-slate-500">Next follow-up: {{ $activeLead->next_follow_up_at->format('M d, h:i A') }}</p>
                 @endif
+                @if($activeCampaign?->campaign)
+                    <div class="mt-4 rounded-lg border border-brand-100 bg-brand-50/50 p-3">
+                        <p class="text-xs font-medium text-brand-700">Campaign</p>
+                        <a href="{{ route('org.campaigns.show', $activeCampaign->campaign) }}" class="text-sm font-medium text-brand-800 hover:underline">
+                            {{ $activeCampaign->campaign->name }}
+                        </a>
+                    </div>
+                @endif
                 <div class="mt-5 flex flex-col gap-2">
                     <a href="{{ route('org.crm.leads.show', $activeLead) }}" class="cp-btn-primary w-full text-center">Open lead</a>
                     <a href="tel:{{ $activeLead->phone }}" class="cp-btn-secondary w-full text-center">Call</a>

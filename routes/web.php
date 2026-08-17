@@ -16,6 +16,8 @@ use App\Http\Controllers\Org\Crm\FollowUpController as CrmFollowUpController;
 use App\Http\Controllers\Org\Crm\LeadController as CrmLeadController;
 use App\Http\Controllers\Org\Crm\PipelineController as CrmPipelineController;
 use App\Http\Controllers\Org\Crm\ReportController as CrmReportController;
+use App\Http\Controllers\Org\CampaignController;
+use App\Http\Controllers\Org\ContactController;
 use App\Http\Controllers\Org\DashboardController;
 use App\Http\Controllers\Org\InboxController;
 use App\Http\Controllers\Org\MessageLogController;
@@ -91,6 +93,28 @@ Route::middleware(['auth', EnsureOrganizationAdmin::class])->name('org.')->group
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
+
+    Route::prefix('campaigns')->name('campaigns.')->group(function () {
+        Route::get('/', [CampaignController::class, 'index'])->name('index');
+        Route::get('/create', [CampaignController::class, 'create'])->name('create');
+        Route::post('/', [CampaignController::class, 'store'])->name('store');
+        Route::get('/{campaign}', [CampaignController::class, 'show'])->name('show');
+        Route::get('/{campaign}/status', [CampaignController::class, 'status'])->name('status');
+        Route::post('/{campaign}/pause', [CampaignController::class, 'pause'])->name('pause');
+        Route::post('/{campaign}/resume', [CampaignController::class, 'resume'])->name('resume');
+        Route::post('/{campaign}/cancel', [CampaignController::class, 'cancel'])->name('cancel');
+        Route::post('/{campaign}/retry', [CampaignController::class, 'retry'])->name('retry');
+        Route::post('/{campaign}/test', [CampaignController::class, 'test'])->name('test');
+        Route::post('/{campaign}/confirm-test', [CampaignController::class, 'confirmTest'])->name('confirm-test');
+        Route::post('/{campaign}/launch', [CampaignController::class, 'launch'])->name('launch');
+    });
+
+    Route::prefix('contacts')->name('contacts.')->group(function () {
+        Route::get('/', [ContactController::class, 'index'])->name('index');
+        Route::post('/', [ContactController::class, 'store'])->name('store');
+        Route::post('/import', [ContactController::class, 'import'])->name('import');
+        Route::post('/lists', [ContactController::class, 'storeList'])->name('lists.store');
+    });
 
     Route::redirect('/dashboard/whatsapp', '/whatsapp');
     Route::redirect('/dashboard/credits', '/recharge');

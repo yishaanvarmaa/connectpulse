@@ -55,6 +55,16 @@ class Organization extends Model
         return $this->hasMany(Lead::class);
     }
 
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(Contact::class);
+    }
+
+    public function campaigns(): HasMany
+    {
+        return $this->hasMany(Campaign::class);
+    }
+
     public function leadFollowUps(): HasMany
     {
         return $this->hasMany(LeadFollowUp::class);

@@ -5,6 +5,12 @@ return [
     'whatsapp_bridge_secret' => env('WHATSAPP_BRIDGE_SECRET', ''),
     'message_rate_limit_seconds' => (int) env('MESSAGE_RATE_LIMIT_SECONDS', 2),
     'message_queue_retries' => (int) env('MESSAGE_QUEUE_RETRIES', 3),
+
+    'campaign_delay_min_seconds' => (int) env('CAMPAIGN_DELAY_MIN_SECONDS', 10),
+    'campaign_delay_max_seconds' => (int) env('CAMPAIGN_DELAY_MAX_SECONDS', 20),
+    'campaign_delay_absolute_min' => (int) env('CAMPAIGN_DELAY_ABSOLUTE_MIN', 5),
+    'campaign_delay_absolute_max' => (int) env('CAMPAIGN_DELAY_ABSOLUTE_MAX', 300),
+    'campaign_max_retries' => (int) env('CAMPAIGN_MAX_RETRIES', 3),
     'api_key_prefix' => env('API_KEY_PREFIX', 'cp_live_'),
 
     'business' => [

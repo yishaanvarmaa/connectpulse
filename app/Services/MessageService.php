@@ -46,6 +46,53 @@ class MessageService
     }
 
     /**
+     * Send a campaign message synchronously through the existing provider pipeline.
+     * Credits are deducted once; no duplicate charge on retries because recipient status gates re-entry.
+     */
+    public function sendCampaignMessage(
+        Organization $organization,
+        string $mobile,
+        string $message,
+        ?int $leadId,
+        int $campaignId,
+        int $campaignRecipientId,
+        ?string $mediaPath = null,
+        ?string $mediaType = null,
+    ): MessageLog {
+        return DB::transaction(function () use (
+            $organization,
+            $mobile,
+            $message,
+            $leadId,
+            $campaignId,
+            $campaignRecipientId,
+            $mediaPath,
+            $mediaType,
+        ) {
+            if (! $this->creditService->deductCredit($organization, "Campaign message to {$mobile}")) {
+                throw new \RuntimeException('Insufficient credits.');
+            }
+
+            $log = MessageLog::create([
+                'organization_id' => $organization->id,
+                'lead_id' => $leadId,
+                'mobile' => $this->normalizeMobile($mobile),
+                'message' => $message,
+                'media_path' => $mediaPath,
+                'media_type' => $mediaType,
+                'status' => MessageLog::STATUS_QUEUED,
+                'credits_used' => 1,
+                'campaign_id' => $campaignId,
+                'campaign_recipient_id' => $campaignRecipientId,
+            ]);
+
+            $this->processMessage($log);
+
+            return $log->fresh();
+        });
+    }
+
+    /**
      * @return array{batch_id: string, queued: int}
      */
     public function queueBulk(Organization $organization, array $recipients): array

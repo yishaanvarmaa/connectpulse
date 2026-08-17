@@ -18,11 +18,15 @@ class MessageLog extends Model
         'lead_id',
         'mobile',
         'message',
+        'media_path',
+        'media_type',
         'status',
         'credits_used',
         'message_id',
         'error_message',
         'batch_id',
+        'campaign_id',
+        'campaign_recipient_id',
         'sent_at',
     ];
 
@@ -42,5 +46,15 @@ class MessageLog extends Model
     public function lead(): BelongsTo
     {
         return $this->belongsTo(Lead::class);
+    }
+
+    public function campaign(): BelongsTo
+    {
+        return $this->belongsTo(Campaign::class);
+    }
+
+    public function campaignRecipient(): BelongsTo
+    {
+        return $this->belongsTo(CampaignRecipient::class);
     }
 }

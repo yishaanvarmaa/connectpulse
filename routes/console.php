@@ -6,6 +6,7 @@ use App\Services\MessageService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -72,3 +73,5 @@ Artisan::command('connectpulse:purge-queued {--org= : Organization ID (optional)
 
     return 0;
 })->purpose('Cancel queued WhatsApp messages and drop pending send jobs');
+
+Schedule::command('connectpulse:start-scheduled-campaigns')->everyMinute();
