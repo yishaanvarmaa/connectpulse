@@ -37,17 +37,32 @@ class CampaignController extends Controller
     {
         $organization = $request->user()->organization;
 
-        $tags = ContactTag::forOrganization($organization)->orderBy('name')->get();
-        $lists = ContactList::forOrganization($organization)->orderBy('name')->get();
+        $tags = ContactTag::forOrganization($organization)->withCount('contacts')->orderBy('name')->get();
+        $lists = ContactList::forOrganization($organization)->withCount('contacts')->orderBy('name')->get();
         $contacts = $organization->contacts()->orderBy('name')->limit(500)->get();
-        $leads = $organization->leads()->orderBy('name')->limit(500)->get();
+        $leads = $organization->leads()->whereNotNull('phone')->orderBy('name')->limit(500)->get();
 
         $defaults = [
             'delay_min' => config('connectpulse.campaign_delay_min_seconds', 10),
             'delay_max' => config('connectpulse.campaign_delay_max_seconds', 20),
         ];
 
-        return view('org.campaigns.create', compact('tags', 'lists', 'contacts', 'leads', 'defaults'));
+        $audienceMeta = [
+            'total_contacts' => $organization->contacts()->count(),
+            'total_leads' => $organization->leads()->whereNotNull('phone')->count(),
+            'lists' => $lists->mapWithKeys(fn ($l) => [$l->id => $l->contacts_count])->all(),
+            'tags' => $tags->mapWithKeys(fn ($t) => [$t->id => $t->contacts_count])->all(),
+        ];
+
+        return view('org.campaigns.create', compact(
+            'tags',
+            'lists',
+            'contacts',
+            'leads',
+            'defaults',
+            'audienceMeta',
+            'organization',
+        ));
     }
 
     public function store(Request $request): RedirectResponse

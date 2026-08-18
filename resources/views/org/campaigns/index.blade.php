@@ -1,21 +1,21 @@
 @extends('layouts.org')
 
-@section('title', 'Campaigns')
+@section('title', 'WhatsApp Campaigns')
 
-@section('page-title', 'Campaigns')
+@section('page-title', 'WhatsApp Campaigns')
 @section('page-subtitle')
-    Bulk messaging with controlled queue sending
+    Send WhatsApp messages to your customers
 @endsection
 
 @section('content')
 <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <p class="text-sm text-slate-500">Queue messages individually with configurable pacing. Only message contacts you are permitted to contact.</p>
-    <a href="{{ route('org.campaigns.create') }}" class="cp-btn-primary shrink-0">+ New Campaign</a>
+    <p class="text-sm text-slate-500">Create and send WhatsApp campaigns to reach your customers with controlled sending.</p>
+    <a href="{{ route('org.campaigns.create') }}" class="cp-btn-primary shrink-0">+ Create WhatsApp Campaign</a>
 </div>
 
 @if($campaigns->isEmpty())
-    <x-ui.empty-state title="No campaigns yet" description="Create your first campaign to reach your audience with controlled sending.">
-        <a href="{{ route('org.campaigns.create') }}" class="cp-btn-primary mt-4">+ New Campaign</a>
+    <x-ui.empty-state title="No WhatsApp campaigns yet" description="Create your first WhatsApp campaign to reach your customers.">
+        <a href="{{ route('org.campaigns.create') }}" class="cp-btn-primary mt-4">+ Create WhatsApp Campaign</a>
     </x-ui.empty-state>
 @else
     <div class="grid gap-3">

@@ -147,6 +147,165 @@
     .safe-area-pb {
         padding-bottom: env(safe-area-inset-bottom, 0);
     }
+
+    /* WhatsApp Campaign Composer */
+    .wa-composer-page {
+        @apply -mx-4 -mt-5 sm:-mx-6 lg:-mx-8;
+    }
+
+    .wa-composer-hero {
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 45%, #312e81 100%);
+        @apply px-4 py-5 sm:px-6 lg:px-8;
+    }
+
+    .wa-composer-grid {
+        @apply grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_400px] lg:gap-6;
+    }
+
+    .wa-composer-panel {
+        @apply rounded-2xl border border-slate-200/60 bg-white/95 shadow-lg shadow-slate-900/5 backdrop-blur-sm;
+    }
+
+    .wa-composer-panel-dark {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 27, 75, 0.95) 100%);
+        @apply rounded-2xl border border-white/10 shadow-2xl shadow-indigo-950/40;
+    }
+
+    .wa-composer-label {
+        @apply text-[11px] font-semibold uppercase tracking-wider text-slate-400;
+    }
+
+    .wa-composer-label-light {
+        @apply text-[11px] font-semibold uppercase tracking-wider text-indigo-300/70;
+    }
+
+    .wa-composer-input {
+        @apply block w-full rounded-xl border border-slate-200/80 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/25;
+    }
+
+    .wa-composer-textarea {
+        @apply block w-full resize-none rounded-xl border border-slate-200/80 bg-white px-4 py-3.5 text-[15px] leading-relaxed text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/25 min-h-[140px];
+    }
+
+    .wa-composer-chip {
+        @apply inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors;
+    }
+
+    .wa-composer-chip-active {
+        @apply border-brand-500/50 bg-brand-50 text-brand-700;
+    }
+
+    .wa-composer-chip-selectable {
+        @apply cursor-pointer hover:border-brand-300 hover:bg-brand-50/50;
+    }
+
+    .wa-composer-status-item {
+        @apply flex items-center gap-2 text-sm text-slate-600;
+    }
+
+    .wa-composer-status-ok {
+        @apply text-emerald-600;
+    }
+
+    .wa-composer-status-warn {
+        @apply text-amber-600;
+    }
+
+    .wa-composer-upload {
+        @apply flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/80 px-4 py-8 text-center transition-colors cursor-pointer hover:border-brand-400 hover:bg-brand-50/30;
+    }
+
+    .wa-composer-upload-has-image {
+        @apply border-solid border-slate-200 bg-white p-3;
+    }
+
+    .wa-composer-radio {
+        @apply flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 cursor-pointer transition-colors has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 has-[:checked]:text-brand-800;
+    }
+
+    .wa-composer-radio input {
+        @apply text-brand-600 focus:ring-brand-500/30;
+    }
+
+    .wa-composer-progress {
+        @apply flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-indigo-200/80;
+    }
+
+    .wa-composer-progress-step {
+        @apply rounded-full px-2.5 py-0.5 transition-colors;
+    }
+
+    .wa-composer-progress-step-active {
+        @apply bg-white/15 text-white;
+    }
+
+    .wa-composer-progress-arrow {
+        @apply text-indigo-400/50;
+    }
+
+    /* WhatsApp phone mockup */
+    .wa-phone {
+        @apply mx-auto w-full max-w-[320px] overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b141a] shadow-2xl;
+    }
+
+    .wa-phone-header {
+        @apply flex items-center gap-3 border-b border-white/5 bg-[#1f2c34] px-4 py-3;
+    }
+
+    .wa-phone-avatar {
+        @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-xs font-bold text-white;
+    }
+
+    .wa-phone-body {
+        @apply min-h-[280px] bg-[url('data:image/svg+xml,%3Csvg_width=%2720%27_height=%2720%27_viewBox=%270_0_20_20%27_xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cg_fill=%27%23182229%27%3E%3Cpath_d=%27M0_0h20v20H0z%27/%3E%3C/g%3E%3C/svg%3E')] p-4;
+    }
+
+    .wa-phone-bubble {
+        @apply ml-auto max-w-[85%] rounded-lg rounded-tr-none bg-[#005c4b] px-3 py-2 text-[14px] leading-relaxed text-white shadow-sm whitespace-pre-wrap break-words;
+    }
+
+    .wa-phone-bubble-image {
+        @apply mb-1 max-w-full rounded-md;
+    }
+
+    .wa-phone-meta {
+        @apply mt-1 flex items-center justify-end gap-1 text-[10px] text-emerald-200/70;
+    }
+
+    .wa-composer-sticky-bar {
+        @apply fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/80 bg-white/95 backdrop-blur-md shadow-[0_-4px_24px_rgba(15,23,42,0.08)] safe-area-pb;
+    }
+
+    .wa-composer-sticky-inner {
+        @apply mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8;
+    }
+
+    .wa-composer-alert {
+        @apply flex items-start gap-2.5 rounded-xl border border-amber-200/80 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900;
+    }
+
+    .wa-composer-error {
+        @apply flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-800;
+    }
+
+    .wa-composer-btn-launch {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%);
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 hover:brightness-110 disabled:opacity-50 disabled:pointer-events-none;
+    }
+
+    .wa-composer-btn-insert {
+        @apply inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-100;
+    }
+
+    .wa-composer-section-title {
+        @apply text-xs font-semibold uppercase tracking-wider text-slate-500;
+    }
+
+    @media (max-width: 1023px) {
+        .wa-composer-sticky-bar {
+            bottom: 4rem;
+        }
+    }
 }
 
 @layer utilities {

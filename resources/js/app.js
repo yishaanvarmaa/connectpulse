@@ -1,3 +1,5 @@
+import { initCampaignComposer } from './campaign-composer.js';
+
 document.addEventListener('DOMContentLoaded', () => {
     initToasts();
     initCopyButtons();
@@ -7,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initWhatsAppComposer();
     initQuickDates();
     initCommandPalette();
+    initCampaignComposer();
 });
 
 function initToasts() {
