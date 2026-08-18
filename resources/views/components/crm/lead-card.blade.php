@@ -34,9 +34,9 @@
 
         @if($showActions)
             <div class="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
-                <button type="button" data-whatsapp-open data-lead-id="{{ $lead->id }}" data-lead-name="{{ $lead->name }}" data-lead-phone="{{ $lead->phone }}" data-whatsapp-url="{{ route('org.crm.leads.whatsapp', $lead) }}" class="cp-btn-success flex-1 !py-2 text-xs">WhatsApp</button>
-                <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary flex-1 !py-2 text-xs text-center">Call</a>
-                <a href="{{ route('org.crm.leads.show', $lead) }}#log-interaction" class="cp-btn-ghost !px-2 !py-2 text-xs">•••</a>
+                <a href="{{ route('org.crm.leads.show', $lead) }}#log-interaction" class="cp-btn-primary flex-1 !py-2 text-xs text-center">Log result</a>
+                <button type="button" data-whatsapp-open data-lead-id="{{ $lead->id }}" data-lead-name="{{ $lead->name }}" data-lead-phone="{{ $lead->phone }}" data-whatsapp-url="{{ route('org.crm.leads.whatsapp', $lead) }}" class="cp-btn-success !px-3 !py-2 text-xs">WA</button>
+                <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary !px-3 !py-2 text-xs">Call</a>
             </div>
         @endif
     </div>

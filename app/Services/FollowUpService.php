@@ -14,6 +14,7 @@ class FollowUpService
 {
     public function __construct(
         private LeadActivityService $activityService,
+        private LeadService $leadService,
     ) {}
 
     public function create(Lead $lead, User $user, array $data): LeadFollowUp
@@ -181,6 +182,8 @@ class FollowUpService
                 $mapped = $this->mapInteractionResult($data['result']);
                 $data['outcome'] = $mapped['outcome'];
                 $data['lead_status'] = $mapped['status'];
+            } elseif (! empty($data['outcome'])) {
+                $data['lead_status'] = $this->mapOutcomeToStatus($data['outcome']);
             }
 
             $outcome = $data['outcome'];
@@ -209,12 +212,14 @@ class FollowUpService
             $lead->update(['last_contacted_at' => now()]);
 
             if (! empty($data['lead_status']) && in_array($data['lead_status'], array_keys(Lead::statuses()), true)) {
-                $lead->update(['status' => $data['lead_status']]);
-                if ($data['lead_status'] === Lead::STATUS_WON) {
-                    $lead->update(['converted_at' => now()]);
-                }
+                $this->leadService->updateStatus(
+                    $lead,
+                    $user,
+                    $data['lead_status'],
+                    $data['lead_status'] === Lead::STATUS_LOST ? ($notes !== '' ? $notes : null) : null,
+                );
             } elseif ($lead->status === Lead::STATUS_NEW) {
-                $lead->update(['status' => Lead::STATUS_CONTACTED]);
+                $this->leadService->updateStatus($lead, $user, Lead::STATUS_CONTACTED);
             }
 
             $activity = $this->activityService->record(
@@ -253,6 +258,19 @@ class FollowUpService
             'lost' => ['outcome' => LeadActivity::OUTCOME_SPOKE_NOT_INTERESTED, 'status' => Lead::STATUS_LOST],
             'no_response' => ['outcome' => LeadActivity::OUTCOME_NO_ANSWER, 'status' => null],
             default => ['outcome' => LeadActivity::OUTCOME_OTHER, 'status' => null],
+        };
+    }
+
+    private function mapOutcomeToStatus(string $outcome): ?string
+    {
+        return match ($outcome) {
+            LeadActivity::OUTCOME_SPOKE_INTERESTED => Lead::STATUS_INTERESTED,
+            LeadActivity::OUTCOME_SPOKE_NOT_INTERESTED => Lead::STATUS_LOST,
+            LeadActivity::OUTCOME_MEETING_DONE => Lead::STATUS_DEMO_SCHEDULED,
+            LeadActivity::OUTCOME_CALLBACK_REQUESTED => Lead::STATUS_FOLLOW_UP,
+            LeadActivity::OUTCOME_WHATSAPP_REPLIED => Lead::STATUS_CONTACTED,
+            LeadActivity::OUTCOME_BUSY => Lead::STATUS_CONTACTED,
+            default => null,
         };
     }
 }

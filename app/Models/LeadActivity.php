@@ -62,6 +62,20 @@ class LeadActivity extends Model
         ];
     }
 
+    /** Unified call-result options shown in the UI (maps to lead stage automatically). */
+    public static function interactionResults(): array
+    {
+        return [
+            'no_response' => ['label' => 'No answer', 'hint' => 'Keeps current stage'],
+            'needs_time' => ['label' => 'Call back later', 'hint' => 'Schedule next follow-up'],
+            'interested' => ['label' => 'Interested', 'hint' => 'Stage → Interested'],
+            'demo' => ['label' => 'Demo / meeting done', 'hint' => 'Stage → Demo scheduled'],
+            'negotiation' => ['label' => 'In negotiation', 'hint' => 'Stage → Negotiation'],
+            'won' => ['label' => 'Deal won', 'hint' => 'Stage → Won'],
+            'lost' => ['label' => 'Not interested', 'hint' => 'Stage → Lost'],
+        ];
+    }
+
     protected $fillable = [
         'lead_id',
         'organization_id',

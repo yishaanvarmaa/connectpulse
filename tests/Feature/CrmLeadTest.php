@@ -101,6 +101,27 @@ class CrmLeadTest extends TestCase
             ->assertSee('Called — no answer');
     }
 
+    public function test_logging_not_interested_marks_lead_as_lost(): void
+    {
+        $lead = Lead::create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Lost Lead',
+            'phone' => '9876543211',
+            'source' => Lead::SOURCE_MANUAL,
+            'status' => Lead::STATUS_CONTACTED,
+            'priority' => Lead::PRIORITY_MEDIUM,
+        ]);
+
+        $this->actingAs($this->user)->post(route('org.crm.leads.log-interaction', $lead), [
+            'result' => 'lost',
+            'notes' => 'Not interested in software.',
+        ])->assertRedirect();
+
+        $lead->refresh();
+        $this->assertSame(Lead::STATUS_LOST, $lead->status);
+        $this->assertSame('Not interested in software.', $lead->lost_reason);
+    }
+
     public function test_org_admin_can_create_lead_with_minimal_slideover_fields(): void
     {
         $response = $this->actingAs($this->user)->post(route('org.crm.leads.store'), [

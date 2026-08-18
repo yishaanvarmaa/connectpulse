@@ -4,7 +4,7 @@
 
 @section('page-title', 'Leads')
 @section('page-subtitle')
-    {{ $leads->total() }} total
+    {{ $leads->total() }} leads · open a lead and log the call result in one step
 @endsection
 
 @section('content')
@@ -46,15 +46,15 @@
 </div>
 
 {{-- Bulk actions (desktop) --}}
-<form method="POST" action="{{ route('org.crm.leads.bulk-status') }}" id="bulk-form" class="hidden mb-3 lg:flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2">
+<form method="POST" action="{{ route('org.crm.leads.bulk-status') }}" id="bulk-form" class="hidden mb-3 lg:flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2">
     @csrf
-    <span class="text-xs font-medium text-brand-800"><span id="bulk-count">0</span> selected</span>
+    <span class="text-xs text-slate-600"><span id="bulk-count" class="font-semibold">0</span> selected</span>
     <select name="status" class="cp-select !py-1 text-xs">
         @foreach($statuses as $key => $label)
             <option value="{{ $key }}">{{ $label }}</option>
         @endforeach
     </select>
-    <button type="submit" class="cp-btn-primary !py-1 text-xs">Update stage</button>
+    <button type="submit" class="cp-btn-secondary !py-1 text-xs">Change stage</button>
 </form>
 
 @if($leads->isEmpty())
@@ -76,16 +76,18 @@
                 <tr>
                     <th class="w-8"><input type="checkbox" id="select-all-leads" class="rounded border-slate-300"></th>
                     <th>Lead</th>
-                    <th>Product</th>
-                    <th>Source</th>
                     <th>Stage</th>
+                    <th>Next follow-up</th>
+                    <th>Last contact</th>
                     <th>Value</th>
-                    <th>Follow-up</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
                 @foreach($leads as $lead)
+                    @php
+                        $isOverdue = $lead->next_follow_up_at && $lead->next_follow_up_at->isPast() && ! $lead->isClosed();
+                    @endphp
                     <tr class="hover:bg-slate-50/80">
                         <td><input type="checkbox" name="lead_ids[]" value="{{ $lead->id }}" form="bulk-form" class="lead-checkbox rounded border-slate-300"></td>
                         <td>
@@ -93,19 +95,34 @@
                                 <span>{{ $lead->temperatureIcon() }}</span>
                                 <div>
                                     <a href="{{ route('org.crm.leads.show', $lead) }}" class="font-medium text-slate-900 hover:text-brand-600">{{ $lead->name }}</a>
-                                    <p class="text-xs text-slate-500">{{ $lead->phone }}</p>
+                                    <p class="text-xs text-slate-500">{{ $lead->phone }} · {{ $lead->sourceLabel() }}</p>
+                                    @if($lead->interested_product)
+                                        <p class="text-[11px] text-slate-400">{{ $lead->interested_product }}</p>
+                                    @endif
                                 </div>
                             </div>
                         </td>
-                        <td>{{ $lead->interested_product ?? '—' }}</td>
-                        <td>{{ $lead->sourceLabel() }}</td>
-                        <td><x-ui.badge type="brand">{{ $lead->statusLabel() }}</x-ui.badge></td>
-                        <td class="font-medium">{{ $lead->estimated_value ? '₹'.number_format($lead->estimated_value, 0) : '—' }}</td>
-                        <td class="text-slate-600">{{ $lead->next_follow_up_at?->format('M d, h:i A') ?? '—' }}</td>
+                        <td>
+                            <x-ui.badge type="{{ $lead->status === 'lost' ? 'neutral' : ($lead->status === 'won' ? 'success' : 'brand') }}">{{ $lead->statusLabel() }}</x-ui.badge>
+                        </td>
+                        <td>
+                            @if($lead->isClosed())
+                                <span class="text-xs text-slate-400">Closed</span>
+                            @elseif($isOverdue)
+                                <span class="text-xs font-medium text-red-600">Overdue</span>
+                                <p class="text-xs text-slate-500">{{ $lead->next_follow_up_at->format('M d, h:i A') }}</p>
+                            @elseif($lead->next_follow_up_at)
+                                <span class="text-xs text-slate-700">{{ $lead->next_follow_up_at->format('M d, h:i A') }}</span>
+                            @else
+                                <span class="text-xs text-slate-400">Not scheduled</span>
+                            @endif
+                        </td>
+                        <td class="text-xs text-slate-600">{{ $lead->last_contacted_at?->format('M d, h:i A') ?? '—' }}</td>
+                        <td class="font-medium text-sm">{{ $lead->estimated_value ? '₹'.number_format($lead->estimated_value, 0) : '—' }}</td>
                         <td class="text-right">
                             <div class="flex justify-end gap-1">
+                                <a href="{{ route('org.crm.leads.show', $lead) }}#log-interaction" class="cp-btn-primary !py-1 text-xs">Log</a>
                                 <button type="button" data-whatsapp-open data-lead-name="{{ $lead->name }}" data-whatsapp-url="{{ route('org.crm.leads.whatsapp', $lead) }}" class="cp-btn-success !py-1 text-xs">WA</button>
-                                <a href="{{ route('org.crm.leads.show', $lead) }}" class="cp-btn-ghost !py-1 text-xs">Open</a>
                             </div>
                         </td>
                     </tr>
