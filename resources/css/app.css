@@ -196,7 +196,7 @@
     }
 
     .wa-composer-chip-selectable {
-        @apply cursor-pointer hover:border-brand-300 hover:bg-brand-50/50;
+        @apply cursor-pointer hover:border-brand-200 hover:bg-brand-50/50;
     }
 
     .wa-composer-status-item {
@@ -212,7 +212,7 @@
     }
 
     .wa-composer-upload {
-        @apply flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/80 px-4 py-8 text-center transition-colors cursor-pointer hover:border-brand-400 hover:bg-brand-50/30;
+        @apply flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/80 px-4 py-8 text-center transition-colors cursor-pointer hover:border-brand-500 hover:bg-brand-50/30;
     }
 
     .wa-composer-upload-has-image {
@@ -220,7 +220,7 @@
     }
 
     .wa-composer-radio {
-        @apply flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 cursor-pointer transition-colors has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 has-[:checked]:text-brand-800;
+        @apply flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 cursor-pointer transition-colors has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 has-[:checked]:text-brand-700;
     }
 
     .wa-composer-radio input {
@@ -273,7 +273,8 @@
     }
 
     .wa-composer-sticky-bar {
-        @apply fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/80 bg-white/95 backdrop-blur-md shadow-[0_-4px_24px_rgba(15,23,42,0.08)] safe-area-pb;
+        @apply fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/80 bg-white/95 backdrop-blur-md shadow-[0_-4px_24px_rgba(15,23,42,0.08)];
+        padding-bottom: env(safe-area-inset-bottom, 0);
     }
 
     .wa-composer-sticky-inner {
