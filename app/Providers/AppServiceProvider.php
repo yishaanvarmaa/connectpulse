@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
                 && $user->organization_id === $followUp->organization_id;
         });
 
-        View::composer(['layouts.org', 'components.org.topbar', 'components.org.sidebar'], OrgShellComposer::class);
+        View::composer(['layouts.org', 'components.org.*', 'org.*'], OrgShellComposer::class);
 
         $seconds = config('connectpulse.message_rate_limit_seconds', 2);
 
