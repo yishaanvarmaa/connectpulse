@@ -14,7 +14,6 @@
         'manual' => 'Pick customers',
         'csv' => 'Paste phone numbers',
     ];
-    $businessName = $organization->company_name ?? 'Your Business';
     $whatsappConnected = $shellWhatsAppConnected ?? false;
 @endphp
 
@@ -83,9 +82,9 @@
                             <label for="message-body" class="wa-composer-label">Write your message</label>
                             <button type="button" id="insert-name-btn" class="wa-composer-btn-insert">+ Name</button>
                         </div>
-                        <textarea name="message_body" id="message-body" required class="wa-composer-textarea" placeholder="Hi {{ '{{name}}' }} 👋&#10;&#10;Our new festive collection has arrived.&#10;&#10;Reply to know more.">{{ old('message_body') }}</textarea>
+                        <textarea name="message_body" id="message-body" required class="wa-composer-textarea" placeholder="Hi @{{name}} 👋&#10;&#10;Our new festive collection has arrived.&#10;&#10;Reply to know more.">{{ old('message_body') }}</textarea>
                         <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
-                            <span>Use <code class="rounded bg-slate-100 px-1 py-0.5 text-[11px]">{{ '{{name}}' }}</code> to personalize with customer name</span>
+                            <span>Use <code class="rounded bg-slate-100 px-1 py-0.5 text-[11px]">@{{name}}</code> to personalize with customer name</span>
                             <span id="char-count">0 / 4096</span>
                         </div>
                         @error('message_body')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
@@ -176,7 +175,7 @@
                                 <div class="flex flex-wrap gap-2">
                                     @foreach($tags as $tag)
                                         <label class="wa-composer-chip wa-composer-chip-selectable has-[:checked]:wa-composer-chip-active">
-                                            <input type="checkbox" name="tag_ids[]" value="{{ $tag->id }}" class="sr-only" @checked(in_array($tag->id, old('tag_ids', [])))>
+                                            <input type="checkbox" name="tag_ids[]" value="{{ $tag->id }}" class="sr-only" @checked(in_array($tag->id, (array) old('tag_ids', [])))>
                                             {{ $tag->name }}
                                             <span class="text-slate-400">({{ $tag->contacts_count }})</span>
                                         </label>

@@ -83,7 +83,16 @@ class CampaignTest extends TestCase
         $this->actingAs($this->user)
             ->get(route('org.campaigns.index'))
             ->assertOk()
-            ->assertSee('Campaigns');
+            ->assertSee('WhatsApp Campaigns');
+    }
+
+    public function test_org_admin_can_view_campaign_create_page(): void
+    {
+        $this->actingAs($this->user)
+            ->get(route('org.campaigns.create'))
+            ->assertOk()
+            ->assertSee('Create WhatsApp Campaign')
+            ->assertSee('WhatsApp preview');
     }
 
     public function test_can_create_campaign_with_contacts(): void

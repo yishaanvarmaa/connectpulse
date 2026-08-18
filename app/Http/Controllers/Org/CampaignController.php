@@ -54,6 +54,8 @@ class CampaignController extends Controller
             'tags' => $tags->mapWithKeys(fn ($t) => [$t->id => $t->contacts_count])->all(),
         ];
 
+        $businessName = $organization?->company_name ?: 'Your Business';
+
         return view('org.campaigns.create', compact(
             'tags',
             'lists',
@@ -62,6 +64,7 @@ class CampaignController extends Controller
             'defaults',
             'audienceMeta',
             'organization',
+            'businessName',
         ));
     }
 
