@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Org;
 use App\Http\Controllers\Controller;
 use App\Services\CommandCenterService;
 use App\Services\MessageService;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -29,7 +28,7 @@ class DashboardController extends Controller
         if ($request->user()->isOrganizationAdmin()) {
             try {
                 $data = array_merge($data, $this->commandCenter->getHomeData($organization));
-            } catch (QueryException) {
+            } catch (\Throwable) {
                 $data['recentLogs'] = $organization->messageLogs()->latest()->limit(5)->get();
             }
         } else {

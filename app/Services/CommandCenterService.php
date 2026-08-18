@@ -48,13 +48,19 @@ class CommandCenterService
         $groups ??= $this->followUpService->getDashboardGroups($organization);
 
         /** @var LeadFollowUp|null $overdue */
-        $overdue = $groups['overdue']->sortByDesc(fn (LeadFollowUp $f) => $f->lead->estimated_value ?? 0)->first();
+        $overdue = $groups['overdue']
+            ->filter(fn (LeadFollowUp $f) => $f->lead !== null)
+            ->sortByDesc(fn (LeadFollowUp $f) => $f->lead->estimated_value ?? 0)
+            ->first();
         if ($overdue) {
             return $this->formatFollowUpAction($overdue, 'overdue');
         }
 
         /** @var LeadFollowUp|null $today */
-        $today = $groups['today']->sortBy('scheduled_at')->first();
+        $today = $groups['today']
+            ->filter(fn (LeadFollowUp $f) => $f->lead !== null)
+            ->sortBy('scheduled_at')
+            ->first();
         if ($today) {
             return $this->formatFollowUpAction($today, 'today');
         }
@@ -95,7 +101,10 @@ class CommandCenterService
         }
 
         /** @var LeadFollowUp|null $upcoming */
-        $upcoming = $groups['upcoming']->sortBy('scheduled_at')->first();
+        $upcoming = $groups['upcoming']
+            ->filter(fn (LeadFollowUp $f) => $f->lead !== null)
+            ->sortBy('scheduled_at')
+            ->first();
         if ($upcoming) {
             return $this->formatFollowUpAction($upcoming, 'upcoming');
         }
@@ -130,6 +139,11 @@ class CommandCenterService
     private function formatFollowUpAction(LeadFollowUp $followUp, string $urgency): array
     {
         $lead = $followUp->lead;
+
+        if (! $lead) {
+            throw new \RuntimeException('Follow-up is missing its lead.');
+        }
+
         $daysOverdue = $urgency === 'overdue'
             ? (int) $followUp->scheduled_at->diffInDays(now())
             : 0;
