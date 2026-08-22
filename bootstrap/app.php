@@ -21,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'super.admin' => EnsureSuperAdmin::class,
             'org.admin' => EnsureOrganizationAdmin::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/razorpay',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

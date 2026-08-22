@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Org;
 
 use App\Http\Controllers\Controller;
 use App\Services\MessageService;
+use App\Services\Payment\RazorpayService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -11,6 +12,7 @@ class RechargeController extends Controller
 {
     public function __construct(
         private MessageService $messageService,
+        private RazorpayService $razorpayService,
     ) {}
 
     public function index(Request $request): View
@@ -30,6 +32,7 @@ class RechargeController extends Controller
             'messagesToday' => $stats['messages_today'] ?? 0,
             'messagesMonth' => $stats['messages_this_month'] ?? 0,
             'usedThisMonth' => (int) $usedThisMonth,
+            'razorpayEnabled' => $this->razorpayService->isConfigured(),
         ]);
     }
 }

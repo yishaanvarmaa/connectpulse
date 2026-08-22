@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\OrganizationApiKeyController;
 use App\Http\Controllers\Admin\OrganizationApiTestController;
 use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\OrganizationWhatsAppController;
+use App\Http\Controllers\Api\RazorpayPaymentController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Org\ApiKeyController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\Org\MessageLogController;
 use App\Http\Controllers\Org\SearchController;
 use App\Http\Controllers\Org\RechargeController;
 use App\Http\Controllers\Org\SettingsController;
+use App\Http\Controllers\Webhooks\RazorpayWebhookController;
 use App\Http\Controllers\Org\WhatsAppController;
 use App\Http\Middleware\EnsureOrganizationAdmin;
 use App\Http\Middleware\EnsureSuperAdmin;
@@ -46,6 +48,8 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [LoginController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
+
+Route::post('/webhooks/razorpay', RazorpayWebhookController::class)->name('webhooks.razorpay');
 
 Route::prefix('admin')->middleware(['auth', EnsureSuperAdmin::class])->name('admin.')->group(function () {
     Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
@@ -87,6 +91,8 @@ Route::middleware(['auth', EnsureOrganizationAdmin::class])->name('org.')->group
     Route::post('/whatsapp/disconnect', [WhatsAppController::class, 'disconnect'])->name('whatsapp.disconnect');
 
     Route::get('/recharge', [RechargeController::class, 'index'])->name('recharge.index');
+    Route::post('/api/create-order', [RazorpayPaymentController::class, 'createOrder'])->name('api.create-order');
+    Route::post('/api/verify-payment', [RazorpayPaymentController::class, 'verifyPayment'])->name('api.verify-payment');
 
     Route::get('/api-keys', [ApiKeyController::class, 'index'])->name('api-keys.index');
     Route::post('/api-keys/regenerate', [ApiKeyController::class, 'regenerate'])->name('api-keys.regenerate');

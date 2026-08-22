@@ -45,6 +45,11 @@ class Organization extends Model
         return $this->hasMany(CreditTransaction::class);
     }
 
+    public function paymentOrders(): HasMany
+    {
+        return $this->hasMany(PaymentOrder::class);
+    }
+
     public function messageLogs(): HasMany
     {
         return $this->hasMany(MessageLog::class);
