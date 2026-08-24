@@ -449,7 +449,7 @@ class SessionManager {
             await this.prepareSession(session.sock, jid);
 
             const content = mediaUrl
-                ? { image: { url: String(mediaUrl) }, caption: String(message || '') }
+                ? await this.buildImageMessage(mediaUrl, message)
                 : { text: String(message) };
             const result = await session.sock.sendMessage(jid, content);
 
@@ -480,6 +480,51 @@ class SessionManager {
             logger.error({ err, organizationId: id, mobile }, 'Send message failed');
             return { success: false, error: err?.message || 'Message delivery failed.' };
         }
+    }
+
+    /**
+     * Build Baileys image payload. Supports local filesystem paths (same-host Laravel
+     * storage) and remote HTTP(S) URLs.
+     */
+    async buildImageMessage(mediaUrl, caption = '') {
+        const raw = String(mediaUrl || '');
+        const localPath = this.resolveLocalMediaPath(raw);
+
+        if (localPath) {
+            const buffer = fs.readFileSync(localPath);
+            return { image: buffer, caption: String(caption || '') };
+        }
+
+        return { image: { url: raw }, caption: String(caption || '') };
+    }
+
+    resolveLocalMediaPath(mediaUrl) {
+        if (!mediaUrl) return null;
+
+        let candidate = mediaUrl;
+        if (candidate.startsWith('file://')) {
+            candidate = candidate.replace(/^file:\/\//, '');
+            // Windows file:///C:/... → /C:/... then strip leading slash
+            if (/^\/[A-Za-z]:[\\/]/.test(candidate)) {
+                candidate = candidate.slice(1);
+            }
+        }
+
+        const looksLocal =
+            candidate.startsWith('/') ||
+            /^[A-Za-z]:[\\/]/.test(candidate);
+
+        if (!looksLocal) return null;
+
+        try {
+            if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+                return candidate;
+            }
+        } catch {
+            return null;
+        }
+
+        return null;
     }
 
     async disconnect(organizationId) {

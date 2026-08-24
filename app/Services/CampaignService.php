@@ -6,6 +6,7 @@ use App\Jobs\ProcessCampaignRecipientJob;
 use App\Models\Campaign;
 use App\Models\CampaignRecipient;
 use App\Models\Contact;
+use App\Models\MessageLog;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -65,6 +66,10 @@ class CampaignService
 
     public function storeMedia(Campaign $campaign, UploadedFile $file): Campaign
     {
+        if ($campaign->media_path) {
+            Storage::disk('public')->delete($campaign->media_path);
+        }
+
         $path = $file->store("campaigns/{$campaign->organization_id}/{$campaign->id}", 'public');
 
         $campaign->update([
@@ -121,7 +126,7 @@ class CampaignService
         $normalized = $this->contactService->normalizePhone($testPhone);
 
         if (! $this->contactService->isValidPhone($normalized)) {
-            return ['success' => false, 'error' => 'Invalid test phone number.'];
+            return ['success' => false, 'error' => 'Invalid test phone number. Use country code, e.g. 919876543210'];
         }
 
         $live = $this->messageService->provider()->getStatus($organization);
@@ -136,26 +141,49 @@ class CampaignService
         $message = $this->renderMessage($campaign->message_body, 'Test User');
 
         try {
-            $log = $this->messageService->queueMessage($organization, $normalized, $message);
+            $log = $this->messageService->sendImmediate(
+                $organization,
+                $normalized,
+                $message,
+                $campaign->media_path,
+                $campaign->media_type,
+                $campaign->id,
+            );
         } catch (\RuntimeException $e) {
             return ['success' => false, 'error' => $e->getMessage()];
         }
 
+        if ($log->status !== MessageLog::STATUS_SENT) {
+            return [
+                'success' => false,
+                'error' => $log->error_message ?: 'Test message failed to send.',
+            ];
+        }
+
+        // Save phone but do NOT auto-confirm — user must verify they received it.
         $campaign->update([
             'test_phone' => $normalized,
-            'test_confirmed' => true,
+            'test_confirmed' => false,
         ]);
 
         return [
             'success' => true,
             'message_log_id' => $log->id,
+            'has_media' => (bool) $campaign->media_path,
         ];
+    }
+
+    public function confirmTest(Campaign $campaign): Campaign
+    {
+        $campaign->update(['test_confirmed' => true]);
+
+        return $campaign->fresh();
     }
 
     public function launch(Campaign $campaign, bool $immediate = true): Campaign
     {
         if (! $campaign->test_confirmed) {
-            throw new \RuntimeException('Send a test message and confirm before launching.');
+            throw new \RuntimeException('Send a test message and confirm you received it before launching.');
         }
 
         if ($campaign->total_recipients <= 0) {
@@ -248,6 +276,27 @@ class CampaignService
         $this->refreshStats($campaign);
 
         return $campaign->fresh();
+    }
+
+    public function delete(Campaign $campaign): void
+    {
+        if (! $campaign->canBeDeleted()) {
+            throw new \RuntimeException('Only draft, completed, or cancelled campaigns can be deleted. Cancel a running campaign first.');
+        }
+
+        if ($campaign->media_path) {
+            Storage::disk('public')->delete($campaign->media_path);
+            $dir = dirname($campaign->media_path);
+            if ($dir && $dir !== '.' && Storage::disk('public')->exists($dir)) {
+                $files = Storage::disk('public')->files($dir);
+                if (count($files) === 0) {
+                    Storage::disk('public')->deleteDirectory($dir);
+                }
+            }
+        }
+
+        $campaign->recipients()->delete();
+        $campaign->delete();
     }
 
     public function retryFailed(Campaign $campaign): Campaign

@@ -125,14 +125,92 @@ class CampaignTest extends TestCase
             'delay_min_seconds' => 10,
             'delay_max_seconds' => 20,
             'send_mode' => 'now',
-            'test_phone' => '919999999999',
-            'launch' => 0,
         ])->assertRedirect();
 
         $campaign = Campaign::first();
         $this->assertNotNull($campaign);
         $this->assertEquals(3, $campaign->total_recipients);
+        $this->assertFalse($campaign->test_confirmed);
+        $this->assertEquals(Campaign::STATUS_DRAFT, $campaign->status);
+    }
+
+    public function test_can_send_test_with_media_and_confirm(): void
+    {
+        $campaign = Campaign::create([
+            'organization_id' => $this->organization->id,
+            'created_by' => $this->user->id,
+            'name' => 'Media Test',
+            'message_body' => 'Hello {{name}}',
+            'audience_type' => Campaign::AUDIENCE_MANUAL,
+            'status' => Campaign::STATUS_DRAFT,
+            'delay_min_seconds' => 10,
+            'delay_max_seconds' => 20,
+            'media_path' => null,
+            'test_confirmed' => false,
+            'total_recipients' => 1,
+        ]);
+
+        CampaignRecipient::create([
+            'campaign_id' => $campaign->id,
+            'phone' => '919111111111',
+            'name' => 'User',
+            'rendered_message' => 'Hello User',
+            'status' => CampaignRecipient::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($this->user)
+            ->post(route('org.campaigns.test', $campaign), [
+                'test_phone' => '919999999999',
+            ])
+            ->assertRedirect();
+
+        $campaign->refresh();
+        $this->assertEquals('919999999999', $campaign->test_phone);
+        $this->assertFalse($campaign->test_confirmed);
+
+        $this->actingAs($this->user)
+            ->post(route('org.campaigns.confirm-test', $campaign))
+            ->assertRedirect();
+
+        $campaign->refresh();
         $this->assertTrue($campaign->test_confirmed);
+    }
+
+    public function test_can_delete_draft_campaign(): void
+    {
+        $campaign = Campaign::create([
+            'organization_id' => $this->organization->id,
+            'created_by' => $this->user->id,
+            'name' => 'Delete Me',
+            'message_body' => 'Hello',
+            'audience_type' => Campaign::AUDIENCE_MANUAL,
+            'status' => Campaign::STATUS_DRAFT,
+        ]);
+
+        $this->actingAs($this->user)
+            ->delete(route('org.campaigns.destroy', $campaign))
+            ->assertRedirect(route('org.campaigns.index'));
+
+        $this->assertDatabaseMissing('campaigns', ['id' => $campaign->id]);
+    }
+
+    public function test_cannot_delete_running_campaign(): void
+    {
+        $campaign = Campaign::create([
+            'organization_id' => $this->organization->id,
+            'created_by' => $this->user->id,
+            'name' => 'Running',
+            'message_body' => 'Hello',
+            'audience_type' => Campaign::AUDIENCE_MANUAL,
+            'status' => Campaign::STATUS_RUNNING,
+            'test_confirmed' => true,
+        ]);
+
+        $this->actingAs($this->user)
+            ->delete(route('org.campaigns.destroy', $campaign))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('campaigns', ['id' => $campaign->id]);
     }
 
     public function test_campaign_processes_recipients_sequentially(): void

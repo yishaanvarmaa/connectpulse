@@ -138,6 +138,20 @@ class Campaign extends Model
             && $this->test_confirmed;
     }
 
+    public function canBeDeleted(): bool
+    {
+        return in_array($this->status, [
+            self::STATUS_DRAFT,
+            self::STATUS_COMPLETED,
+            self::STATUS_CANCELLED,
+        ], true);
+    }
+
+    public function hasTestBeenSent(): bool
+    {
+        return filled($this->test_phone);
+    }
+
     public function progressPercent(): int
     {
         if ($this->total_recipients <= 0) {

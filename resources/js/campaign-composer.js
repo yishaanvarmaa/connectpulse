@@ -11,7 +11,6 @@ export function initCampaignComposer() {
         audienceType: form.querySelector('#audience-type'),
         messageBody: form.querySelector('#message-body'),
         mediaInput: form.querySelector('#media-input'),
-        testPhone: form.querySelector('[name="test_phone"]'),
         delayMin: form.querySelector('[name="delay_min_seconds"]'),
         delayMax: form.querySelector('[name="delay_max_seconds"]'),
         previewMessage: document.getElementById('preview-message'),
@@ -28,22 +27,15 @@ export function initCampaignComposer() {
         statusRecipients: document.getElementById('status-recipients'),
         validationBanner: document.getElementById('validation-banner'),
         validationText: document.getElementById('validation-text'),
-        launchBtn: document.getElementById('launch-campaign-btn'),
-        stickyLaunchBtn: document.getElementById('sticky-launch-btn'),
+        saveBtn: document.getElementById('save-campaign-btn'),
+        stickySaveBtn: document.getElementById('sticky-save-btn'),
         mediaUploadArea: document.getElementById('media-upload-area'),
         mediaPreviewWrap: document.getElementById('media-preview-wrap'),
         mediaPreviewImg: document.getElementById('media-preview-img'),
         audienceSummary: document.getElementById('audience-summary'),
         audienceChipDisplay: document.getElementById('audience-chip-display'),
-        confirmSheet: document.getElementById('launch-confirm-sheet'),
-        confirmName: document.getElementById('confirm-campaign-name'),
-        confirmAudience: document.getElementById('confirm-audience-count'),
-        confirmMedia: document.getElementById('confirm-media-status'),
-        confirmSending: document.getElementById('confirm-sending-mode'),
-        confirmCredits: document.getElementById('confirm-credits'),
         whatsappWarning: document.getElementById('whatsapp-warning'),
         scheduleField: document.getElementById('schedule-field'),
-        scheduleDate: form.querySelector('[name="scheduled_at"]'),
     };
 
     const panels = {
@@ -62,7 +54,6 @@ export function initCampaignComposer() {
         csv: 'Paste phone numbers',
     };
 
-    let pendingLaunch = false;
     let mediaObjectUrl = null;
 
     function updatePreviewTime() {
@@ -85,9 +76,9 @@ export function initCampaignComposer() {
     }
 
     function updatePreviewBusiness() {
-        const name = els.name?.value?.trim() || businessName;
-        if (els.previewBusiness) els.previewBusiness.textContent = name;
-        if (els.previewAvatar) els.previewAvatar.textContent = name.charAt(0).toUpperCase();
+        // Preview chat title is the business, not the campaign name
+        if (els.previewBusiness) els.previewBusiness.textContent = businessName;
+        if (els.previewAvatar) els.previewAvatar.textContent = businessName.charAt(0).toUpperCase();
     }
 
     function countCsvPhones(text) {
@@ -134,7 +125,9 @@ export function initCampaignComposer() {
             return opt?.textContent?.split(' (')[0] || audienceLabels[type];
         }
         if (type === 'tags') {
-            const names = [...form.querySelectorAll('[name="tag_ids[]"]:checked')].map((cb) => cb.closest('label')?.textContent?.trim()).filter(Boolean);
+            const names = [...form.querySelectorAll('[name="tag_ids[]"]:checked')]
+                .map((cb) => cb.closest('label')?.textContent?.trim())
+                .filter(Boolean);
             return names.length ? names.join(', ') : audienceLabels[type];
         }
         return audienceLabels[type] || type;
@@ -174,8 +167,8 @@ export function initCampaignComposer() {
 
         if (els.statusMedia) {
             els.statusMedia.innerHTML = hasMedia
-                ? '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>Image attached</span>'
-                : '<span class="text-slate-400">No image</span>';
+                ? '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>Photo attached</span>'
+                : '<span class="text-slate-400">No photo</span>';
             els.statusMedia.className = `wa-composer-status-item ${hasMedia ? 'wa-composer-status-ok' : ''}`;
         }
 
@@ -189,26 +182,30 @@ export function initCampaignComposer() {
 
     function getValidationErrors() {
         const errors = [];
-        if (!whatsappConnected) errors.push('WhatsApp is not connected.');
         if (!els.name?.value?.trim()) errors.push('Give your campaign a name.');
-        if (countRecipients() <= 0) errors.push('Choose at least one customer before launching.');
-        if (!(els.messageBody?.value || '').trim()) errors.push('Write a message before launching.');
+        if (!(els.messageBody?.value || '').trim()) errors.push('Write a message before saving.');
+        if (countRecipients() <= 0) errors.push('Choose at least one customer.');
+        const sendMode = form.querySelector('[name="send_mode"]:checked')?.value;
+        if (sendMode === 'schedule') {
+            const scheduled = form.querySelector('[name="scheduled_at"]')?.value;
+            if (!scheduled) errors.push('Pick a date and time for the schedule.');
+        }
         return errors;
     }
 
     function updateValidation() {
         const errors = getValidationErrors();
-        const canLaunch = errors.length === 0;
+        const canSave = errors.length === 0;
 
         if (els.validationBanner) {
-            els.validationBanner.classList.toggle('hidden', canLaunch);
+            els.validationBanner.classList.toggle('hidden', canSave);
             if (els.validationText) {
                 els.validationText.textContent = errors[0] || '';
             }
         }
 
-        if (els.launchBtn) els.launchBtn.disabled = !canLaunch;
-        if (els.stickyLaunchBtn) els.stickyLaunchBtn.disabled = !canLaunch;
+        if (els.saveBtn) els.saveBtn.disabled = !canSave;
+        if (els.stickySaveBtn) els.stickySaveBtn.disabled = !canSave;
 
         if (els.whatsappWarning) {
             els.whatsappWarning.classList.toggle('hidden', whatsappConnected);
@@ -261,45 +258,7 @@ export function initCampaignComposer() {
     function updateScheduleVisibility() {
         const isSchedule = form.querySelector('[name="send_mode"]:checked')?.value === 'schedule';
         els.scheduleField?.classList.toggle('hidden', !isSchedule);
-    }
-
-    function openConfirmSheet() {
-        const count = updateRecipientDisplay();
-        if (els.confirmName) els.confirmName.textContent = els.name?.value?.trim() || 'Untitled';
-        if (els.confirmAudience) els.confirmAudience.textContent = `${count.toLocaleString()} customers`;
-        if (els.confirmMedia) {
-            els.confirmMedia.textContent = els.mediaInput?.files?.length ? '✓ Image attached' : 'No image';
-        }
-        const sendMode = form.querySelector('[name="send_mode"]:checked')?.value;
-        const delayMin = els.delayMin?.value || '10';
-        const delayMax = els.delayMax?.value || '20';
-        if (els.confirmSending) {
-            els.confirmSending.textContent = sendMode === 'schedule'
-                ? `Scheduled · ${delayMin}–${delayMax} sec between messages`
-                : `Send now · ${delayMin}–${delayMax} sec between messages`;
-        }
-        if (els.confirmCredits) els.confirmCredits.textContent = count.toLocaleString();
-        els.confirmSheet?.classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
-    }
-
-    function closeConfirmSheet() {
-        els.confirmSheet?.classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
-        pendingLaunch = false;
-    }
-
-    function submitLaunch() {
-        pendingLaunch = true;
-        let launchInput = form.querySelector('input[name="launch"]');
-        if (!launchInput) {
-            launchInput = document.createElement('input');
-            launchInput.type = 'hidden';
-            launchInput.name = 'launch';
-            form.appendChild(launchInput);
-        }
-        launchInput.value = '1';
-        form.requestSubmit();
+        updateValidation();
     }
 
     // Event listeners
@@ -310,7 +269,7 @@ export function initCampaignComposer() {
     form.querySelector('[name="csv_phones"]')?.addEventListener('input', updateRecipientDisplay);
 
     els.messageBody?.addEventListener('input', renderPreviewMessage);
-    els.name?.addEventListener('input', updatePreviewBusiness);
+    els.name?.addEventListener('input', updateValidation);
     els.mediaInput?.addEventListener('change', handleMediaChange);
 
     document.getElementById('media-remove-btn')?.addEventListener('click', (e) => {
@@ -344,43 +303,19 @@ export function initCampaignComposer() {
     form.querySelectorAll('[name="send_mode"]').forEach((radio) => {
         radio.addEventListener('change', updateScheduleVisibility);
     });
-
-    document.querySelectorAll('[data-launch-trigger]').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const errors = getValidationErrors();
-            if (errors.length) {
-                updateValidation();
-                if (els.validationBanner) {
-                    els.validationBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-                return;
-            }
-            openConfirmSheet();
-        });
-    });
-
-    document.getElementById('confirm-launch-btn')?.addEventListener('click', () => {
-        closeConfirmSheet();
-        submitLaunch();
-    });
-
-    document.querySelectorAll('[data-confirm-cancel]').forEach((btn) => {
-        btn.addEventListener('click', closeConfirmSheet);
-    });
+    form.querySelector('[name="scheduled_at"]')?.addEventListener('change', updateValidation);
 
     form.addEventListener('submit', (e) => {
-        const submitter = e.submitter;
-        if (submitter?.name === 'launch' && submitter.value === '1' && !pendingLaunch) {
+        const errors = getValidationErrors();
+        if (errors.length) {
             e.preventDefault();
-            openConfirmSheet();
+            updateValidation();
+            els.validationBanner?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
 
-    // Mobile ↔ desktop field sync
     initMobileSync(form, updateRecipientDisplay);
 
-    // Init
     updatePreviewTime();
     setInterval(updatePreviewTime, 60000);
     updatePreviewBusiness();
@@ -501,7 +436,6 @@ function initMobileSync(form, updateRecipientDisplay) {
         btn.addEventListener('click', syncDesktopToMobile);
     });
 
-    // Sync mobile inputs on change
     document.getElementById('contact-list-mobile')?.addEventListener('change', syncMobileToDesktop);
     document.querySelectorAll('.tag-mobile-cb, .contact-mobile-cb, .lead-mobile-cb').forEach((cb) => {
         cb.addEventListener('change', syncMobileToDesktop);

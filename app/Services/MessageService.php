@@ -23,9 +23,15 @@ class MessageService
         return $this->provider;
     }
 
-    public function queueMessage(Organization $organization, string $mobile, string $message, ?int $leadId = null): MessageLog
-    {
-        return DB::transaction(function () use ($organization, $mobile, $message, $leadId) {
+    public function queueMessage(
+        Organization $organization,
+        string $mobile,
+        string $message,
+        ?int $leadId = null,
+        ?string $mediaPath = null,
+        ?string $mediaType = null,
+    ): MessageLog {
+        return DB::transaction(function () use ($organization, $mobile, $message, $leadId, $mediaPath, $mediaType) {
             if (! $this->creditService->deductCredit($organization, "Queued message to {$mobile}")) {
                 throw new \RuntimeException('Insufficient credits.');
             }
@@ -35,6 +41,8 @@ class MessageService
                 'lead_id' => $leadId,
                 'mobile' => $this->normalizeMobile($mobile),
                 'message' => $message,
+                'media_path' => $mediaPath,
+                'media_type' => $mediaType,
                 'status' => MessageLog::STATUS_QUEUED,
                 'credits_used' => 1,
             ]);
@@ -43,6 +51,39 @@ class MessageService
                 ->onQueue('messages');
 
             return $log;
+        });
+    }
+
+    /**
+     * Send immediately (sync) — used for campaign test messages so the user knows if delivery worked.
+     */
+    public function sendImmediate(
+        Organization $organization,
+        string $mobile,
+        string $message,
+        ?string $mediaPath = null,
+        ?string $mediaType = null,
+        ?int $campaignId = null,
+    ): MessageLog {
+        return DB::transaction(function () use ($organization, $mobile, $message, $mediaPath, $mediaType, $campaignId) {
+            if (! $this->creditService->deductCredit($organization, "Test message to {$mobile}")) {
+                throw new \RuntimeException('Insufficient credits.');
+            }
+
+            $log = MessageLog::create([
+                'organization_id' => $organization->id,
+                'mobile' => $this->normalizeMobile($mobile),
+                'message' => $message,
+                'media_path' => $mediaPath,
+                'media_type' => $mediaType,
+                'status' => MessageLog::STATUS_QUEUED,
+                'credits_used' => 1,
+                'campaign_id' => $campaignId,
+            ]);
+
+            $this->processMessage($log);
+
+            return $log->fresh();
         });
     }
 
@@ -161,7 +202,11 @@ class MessageService
         }
 
         $mediaUrl = null;
-        if ($log->media_path) {
+        if ($log->media_path && Storage::disk('public')->exists($log->media_path)) {
+            // Prefer absolute local path so the bridge (same host) can read the file
+            // without depending on APP_URL / public storage being reachable over HTTP.
+            $mediaUrl = Storage::disk('public')->path($log->media_path);
+        } elseif ($log->media_path) {
             $mediaUrl = url(Storage::disk('public')->url($log->media_path));
         }
 

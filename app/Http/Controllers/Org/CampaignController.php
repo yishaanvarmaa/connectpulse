@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Campaign;
 use App\Models\ContactList;
 use App\Models\ContactTag;
-use App\Models\Lead;
 use App\Services\CampaignService;
 use App\Services\ContactService;
 use Illuminate\Http\JsonResponse;
@@ -89,9 +88,6 @@ class CampaignController extends Controller
             'send_mode' => ['required', 'in:now,schedule'],
             'scheduled_at' => ['nullable', 'date', 'after:now'],
             'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:5120'],
-            'test_phone' => ['nullable', 'string', 'max:20'],
-            'confirm_test' => ['nullable', 'boolean'],
-            'launch' => ['nullable', 'boolean'],
         ]);
 
         [$minDelay, $maxDelay] = $this->campaignService->validateDelayRange(
@@ -117,39 +113,24 @@ class CampaignController extends Controller
             'audience_config' => $audienceConfig,
             'delay_min_seconds' => $minDelay,
             'delay_max_seconds' => $maxDelay,
-            'scheduled_at' => $validated['send_mode'] === 'schedule' ? $validated['scheduled_at'] : null,
+            'scheduled_at' => $validated['send_mode'] === 'schedule' ? ($validated['scheduled_at'] ?? null) : null,
         ]);
 
         if ($request->hasFile('media')) {
             $this->campaignService->storeMedia($campaign, $request->file('media'));
         }
 
-        $this->campaignService->buildRecipients($campaign);
+        $recipientCount = $this->campaignService->buildRecipients($campaign);
 
-        if (! empty($validated['test_phone'])) {
-            $result = $this->campaignService->sendTest($campaign, $validated['test_phone']);
-            if (! ($result['success'] ?? false)) {
-                return redirect()
-                    ->route('org.campaigns.show', $campaign)
-                    ->with('error', $result['error'] ?? 'Test message failed.');
-            }
-        } elseif ($request->boolean('confirm_test')) {
-            $campaign->update(['test_confirmed' => true]);
-        }
-
-        if ($request->boolean('launch')) {
-            try {
-                $this->campaignService->launch($campaign, $validated['send_mode'] === 'now');
-            } catch (\RuntimeException $e) {
-                return redirect()
-                    ->route('org.campaigns.show', $campaign)
-                    ->with('error', $e->getMessage());
-            }
+        if ($recipientCount <= 0) {
+            return redirect()
+                ->route('org.campaigns.show', $campaign)
+                ->with('error', 'Campaign saved, but no valid recipients were found. Check your audience.');
         }
 
         return redirect()
             ->route('org.campaigns.show', $campaign)
-            ->with('success', 'Campaign created successfully.');
+            ->with('success', 'Campaign saved. Send yourself a test message, then launch.');
     }
 
     public function show(Request $request, Campaign $campaign): View
@@ -244,6 +225,21 @@ class CampaignController extends Controller
         return back()->with('success', 'Campaign cancelled.');
     }
 
+    public function destroy(Request $request, Campaign $campaign): RedirectResponse
+    {
+        $this->authorize('delete', $campaign);
+
+        try {
+            $this->campaignService->delete($campaign);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('org.campaigns.index')
+            ->with('success', 'Campaign deleted.');
+    }
+
     public function retry(Request $request, Campaign $campaign): RedirectResponse
     {
         $this->authorize('manage', $campaign);
@@ -267,14 +263,18 @@ class CampaignController extends Controller
             return back()->with('error', $result['error'] ?? 'Test failed.');
         }
 
-        return back()->with('success', 'Test message queued. Confirm to launch the campaign.');
+        $mediaNote = ($result['has_media'] ?? false)
+            ? ' (with your photo)'
+            : '';
+
+        return back()->with('success', "Test message sent{$mediaNote}. Check WhatsApp, then confirm below to unlock launch.");
     }
 
     public function confirmTest(Request $request, Campaign $campaign): RedirectResponse
     {
         $this->authorize('manage', $campaign);
 
-        $campaign->update(['test_confirmed' => true]);
+        $this->campaignService->confirmTest($campaign);
 
         return back()->with('success', 'Test confirmed. You can now launch the campaign.');
     }
@@ -283,13 +283,26 @@ class CampaignController extends Controller
     {
         $this->authorize('manage', $campaign);
 
+        if ($request->boolean('skip_test')) {
+            $this->campaignService->confirmTest($campaign);
+            $campaign->refresh();
+        }
+
+        $sendNow = $request->boolean('send_now', true);
+        $hasFutureSchedule = $campaign->scheduled_at && $campaign->scheduled_at->isFuture();
+        $immediate = $sendNow || ! $hasFutureSchedule;
+
         try {
-            $this->campaignService->launch($campaign);
+            $this->campaignService->launch($campaign, $immediate);
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Campaign launched.');
+        $message = $immediate
+            ? 'Campaign launched — messages are sending.'
+            : 'Campaign scheduled for '.$campaign->scheduled_at->format('M j, g:i A').'.';
+
+        return back()->with('success', $message);
     }
 
     private function parseCsvPhones(string $text): array

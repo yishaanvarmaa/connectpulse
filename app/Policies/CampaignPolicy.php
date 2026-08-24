@@ -34,7 +34,7 @@ class CampaignPolicy
 
     public function delete(User $user, Campaign $campaign): bool
     {
-        return $this->update($user, $campaign);
+        return $this->update($user, $campaign) && $campaign->canBeDeleted();
     }
 
     public function manage(User $user, Campaign $campaign): bool

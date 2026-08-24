@@ -109,6 +109,7 @@ Route::middleware(['auth', EnsureOrganizationAdmin::class])->name('org.')->group
         Route::post('/{campaign}/pause', [CampaignController::class, 'pause'])->name('pause');
         Route::post('/{campaign}/resume', [CampaignController::class, 'resume'])->name('resume');
         Route::post('/{campaign}/cancel', [CampaignController::class, 'cancel'])->name('cancel');
+        Route::delete('/{campaign}', [CampaignController::class, 'destroy'])->name('destroy');
         Route::post('/{campaign}/retry', [CampaignController::class, 'retry'])->name('retry');
         Route::post('/{campaign}/test', [CampaignController::class, 'test'])->name('test');
         Route::post('/{campaign}/confirm-test', [CampaignController::class, 'confirmTest'])->name('confirm-test');
