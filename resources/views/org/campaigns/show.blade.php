@@ -160,11 +160,13 @@
                     <div class="flex flex-wrap gap-2">
                         @if($campaign->status === 'running')
                             <form method="POST" action="{{ route('org.campaigns.pause', $campaign) }}">@csrf<button type="submit" class="cp-btn-secondary">Pause</button></form>
+                            <form method="POST" action="{{ route('org.campaigns.kick', $campaign) }}">@csrf<button type="submit" class="cp-btn-primary">Resume sending</button></form>
                             <form method="POST" action="{{ route('org.campaigns.cancel', $campaign) }}">@csrf<button type="submit" class="cp-btn-danger">Cancel</button></form>
                         @elseif($campaign->status === 'paused')
                             <form method="POST" action="{{ route('org.campaigns.resume', $campaign) }}">@csrf<button type="submit" class="cp-btn-primary">Resume</button></form>
                             <form method="POST" action="{{ route('org.campaigns.cancel', $campaign) }}">@csrf<button type="submit" class="cp-btn-danger">Cancel</button></form>
                         @elseif($campaign->status === 'scheduled')
+                            <form method="POST" action="{{ route('org.campaigns.kick', $campaign) }}">@csrf<button type="submit" class="cp-btn-primary">Start now</button></form>
                             <form method="POST" action="{{ route('org.campaigns.cancel', $campaign) }}">@csrf<button type="submit" class="cp-btn-danger">Cancel schedule</button></form>
                         @elseif($campaign->status === 'completed' && $campaign->failed_count > 0)
                             <form method="POST" action="{{ route('org.campaigns.retry', $campaign) }}">@csrf<button type="submit" class="cp-btn-secondary">Retry failures</button></form>

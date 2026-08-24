@@ -213,8 +213,20 @@ class CampaignService
                 'pause_reason' => null,
             ]);
 
-            ProcessCampaignRecipientJob::dispatch($campaign->id)
-                ->onQueue('campaigns');
+            // Run the first recipient immediately so launch does not depend on
+            // queue-worker lag. Remaining recipients are queued with delay.
+            try {
+                ProcessCampaignRecipientJob::dispatchSync($campaign->id);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Campaign first send failed, queuing retry', [
+                    'campaign_id' => $campaign->id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                ProcessCampaignRecipientJob::dispatch($campaign->id)
+                    ->onConnection('database')
+                    ->onQueue('campaigns');
+            }
         } else {
             $campaign->update(['status' => Campaign::STATUS_SCHEDULED]);
         }
@@ -254,7 +266,51 @@ class CampaignService
         ]);
 
         ProcessCampaignRecipientJob::dispatch($campaign->id)
+            ->onConnection('database')
             ->onQueue('campaigns');
+
+        return $campaign->fresh();
+    }
+
+    /**
+     * Re-dispatch processing for a running/paused campaign that appears stuck.
+     */
+    public function kick(Campaign $campaign): Campaign
+    {
+        $campaign->refresh();
+
+        if ($campaign->status === Campaign::STATUS_SCHEDULED
+            && $campaign->scheduled_at
+            && $campaign->scheduled_at->isPast()) {
+            $campaign->update([
+                'status' => Campaign::STATUS_RUNNING,
+                'started_at' => $campaign->started_at ?? now(),
+            ]);
+        }
+
+        if ($campaign->status === Campaign::STATUS_PAUSED) {
+            return $this->resume($campaign);
+        }
+
+        if ($campaign->status !== Campaign::STATUS_RUNNING) {
+            throw new \RuntimeException('Campaign is not in a sendable state (status: '.$campaign->status.').');
+        }
+
+        // Reset recipients stuck in "sending" from a crashed worker.
+        $campaign->recipients()
+            ->where('status', CampaignRecipient::STATUS_SENDING)
+            ->where('updated_at', '<', now()->subMinutes(2))
+            ->update(['status' => CampaignRecipient::STATUS_PENDING]);
+
+        try {
+            ProcessCampaignRecipientJob::dispatchSync($campaign->id);
+        } catch (\Throwable $e) {
+            ProcessCampaignRecipientJob::dispatch($campaign->id)
+                ->onConnection('database')
+                ->onQueue('campaigns');
+
+            throw new \RuntimeException('Kick queued, but immediate send failed: '.$e->getMessage());
+        }
 
         return $campaign->fresh();
     }
@@ -563,6 +619,7 @@ class CampaignService
         $delay = random_int($campaign->delay_min_seconds, $campaign->delay_max_seconds);
 
         ProcessCampaignRecipientJob::dispatch($campaign->id)
+            ->onConnection('database')
             ->onQueue('campaigns')
             ->delay(now()->addSeconds($delay));
     }

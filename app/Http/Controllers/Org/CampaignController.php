@@ -379,6 +379,8 @@ class CampaignController extends Controller
             $campaign->refresh();
         }
 
+        // "Launch now" / send_now=1 always starts immediately, even if a
+        // future schedule was saved on the draft.
         $sendNow = $request->boolean('send_now', true);
         $hasFutureSchedule = $campaign->scheduled_at && $campaign->scheduled_at->isFuture();
         $immediate = $sendNow || ! $hasFutureSchedule;
@@ -389,11 +391,28 @@ class CampaignController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        $message = $immediate
-            ? 'Campaign launched — messages are sending.'
-            : 'Campaign scheduled for '.$campaign->scheduled_at->format('M j, g:i A').'.';
+        $campaign->refresh();
+
+        $message = $campaign->status === 'running'
+            ? 'Campaign launched — first message is sending now.'
+            : ($campaign->scheduled_at
+                ? 'Campaign scheduled for '.$campaign->scheduled_at->format('M j, g:i A').'.'
+                : 'Campaign launched.');
 
         return back()->with('success', $message);
+    }
+
+    public function kick(Request $request, Campaign $campaign): RedirectResponse
+    {
+        $this->authorize('manage', $campaign);
+
+        try {
+            $this->campaignService->kick($campaign);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Sending resumed.');
     }
 
     private function parseCsvPhones(string $text): array

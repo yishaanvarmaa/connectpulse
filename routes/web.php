@@ -114,6 +114,7 @@ Route::middleware(['auth', EnsureOrganizationAdmin::class])->name('org.')->group
         Route::post('/{campaign}/test', [CampaignController::class, 'test'])->name('test');
         Route::post('/{campaign}/confirm-test', [CampaignController::class, 'confirmTest'])->name('confirm-test');
         Route::post('/{campaign}/launch', [CampaignController::class, 'launch'])->name('launch');
+        Route::post('/{campaign}/kick', [CampaignController::class, 'kick'])->name('kick');
     });
 
     Route::prefix('contacts')->name('contacts.')->group(function () {
