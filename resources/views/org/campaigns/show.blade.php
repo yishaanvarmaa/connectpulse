@@ -62,7 +62,7 @@
                 <div>
                     <p class="text-sm font-semibold text-slate-900">2. Send a test to your phone</p>
                     <p class="mt-0.5 text-xs text-slate-500">
-                        We will send the exact campaign message@if(!empty($mediaUrl)) with your photo@endif.
+                        We will send the exact campaign message{{ ! empty($mediaUrl) ? ' with your photo' : '' }}.
                     </p>
                     @if(! $campaign->test_confirmed)
                         <form method="POST" action="{{ route('org.campaigns.test', $campaign) }}" class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -75,7 +75,9 @@
                             <button type="submit" class="cp-btn-primary shrink-0">{{ $testSent ? 'Resend test' : 'Send test now' }}</button>
                         </form>
                     @else
-                        <p class="mt-2 text-sm text-emerald-700">Test confirmed@if($campaign->test_phone) for +{{ $campaign->test_phone }}@endif</p>
+                        <p class="mt-2 text-sm text-emerald-700">
+                            Test confirmed{{ $campaign->test_phone ? ' for +'.$campaign->test_phone : '' }}
+                        </p>
                     @endif
                 </div>
 
