@@ -38,4 +38,11 @@ return [
     ],
 
     'credit_price_inr' => env('CONNECTPULSE_CREDIT_PRICE_INR'),
+
+    'signup_bonus_credits' => (int) env('SIGNUP_BONUS_CREDITS', 15),
+    'registration_per_hour' => (int) env('REGISTRATION_PER_HOUR', 3),
+    'extra_disposable_email_domains' => array_values(array_filter(array_map(
+        static fn (string $domain): string => strtolower(trim($domain)),
+        explode(',', (string) env('DISPOSABLE_EMAIL_DOMAINS', '')),
+    ))),
 ];

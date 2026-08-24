@@ -42,7 +42,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
     Route::get('/register', [RegisterController::class, 'show'])->name('register');
-    Route::post('/register', [RegisterController::class, 'store']);
+    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:registration');
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])
@@ -104,17 +104,20 @@ Route::middleware(['auth', EnsureOrganizationAdmin::class])->name('org.')->group
         Route::get('/', [CampaignController::class, 'index'])->name('index');
         Route::get('/create', [CampaignController::class, 'create'])->name('create');
         Route::post('/', [CampaignController::class, 'store'])->name('store');
-        Route::get('/{campaign}', [CampaignController::class, 'show'])->name('show');
-        Route::get('/{campaign}/status', [CampaignController::class, 'status'])->name('status');
-        Route::post('/{campaign}/pause', [CampaignController::class, 'pause'])->name('pause');
-        Route::post('/{campaign}/resume', [CampaignController::class, 'resume'])->name('resume');
-        Route::post('/{campaign}/cancel', [CampaignController::class, 'cancel'])->name('cancel');
-        Route::delete('/{campaign}', [CampaignController::class, 'destroy'])->name('destroy');
-        Route::post('/{campaign}/retry', [CampaignController::class, 'retry'])->name('retry');
-        Route::post('/{campaign}/test', [CampaignController::class, 'test'])->name('test');
-        Route::post('/{campaign}/confirm-test', [CampaignController::class, 'confirmTest'])->name('confirm-test');
-        Route::post('/{campaign}/launch', [CampaignController::class, 'launch'])->name('launch');
-        Route::post('/{campaign}/kick', [CampaignController::class, 'kick'])->name('kick');
+
+        Route::prefix('{campaign}')->whereNumber('campaign')->group(function () {
+            Route::get('/', [CampaignController::class, 'show'])->name('show');
+            Route::get('/status', [CampaignController::class, 'status'])->name('status');
+            Route::post('/pause', [CampaignController::class, 'pause'])->name('pause');
+            Route::post('/resume', [CampaignController::class, 'resume'])->name('resume');
+            Route::post('/cancel', [CampaignController::class, 'cancel'])->name('cancel');
+            Route::delete('/', [CampaignController::class, 'destroy'])->name('destroy');
+            Route::post('/retry', [CampaignController::class, 'retry'])->name('retry');
+            Route::post('/test', [CampaignController::class, 'test'])->name('test');
+            Route::post('/confirm-test', [CampaignController::class, 'confirmTest'])->name('confirm-test');
+            Route::post('/launch', [CampaignController::class, 'launch'])->name('launch');
+            Route::post('/kick', [CampaignController::class, 'kick'])->name('kick');
+        });
     });
 
     Route::prefix('contacts')->name('contacts.')->group(function () {

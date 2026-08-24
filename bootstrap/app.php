@@ -43,6 +43,34 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
             }
 
+            if ($e instanceof \Illuminate\Validation\ValidationException
+                || $e instanceof \Illuminate\Auth\AuthenticationException
+                || $e instanceof \Illuminate\Session\TokenMismatchException) {
+                return null;
+            }
+
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface
+                && $e->getStatusCode() < 500) {
+                return null;
+            }
+
+            if ($request->routeIs('org.campaigns.create', 'org.campaigns.store', 'org.campaigns.show')) {
+                report($e);
+                @file_put_contents(
+                    storage_path('logs/campaign-debug.log'),
+                    '['.date('Y-m-d H:i:s').'] '.$e::class.': '.$e->getMessage().' @ '.$e->getFile().':'.$e->getLine().PHP_EOL.$e->getTraceAsString().PHP_EOL,
+                    FILE_APPEND
+                );
+
+                $message = $request->routeIs('org.campaigns.store')
+                    ? 'Could not save campaign: '.$e->getMessage()
+                    : 'Could not open campaign: '.$e->getMessage();
+
+                return redirect()
+                    ->route('org.campaigns.index')
+                    ->with('error', $message);
+            }
+
             return null;
         });
     })->create();

@@ -168,38 +168,23 @@ class ContactService
     public function resolveAudience(Organization $organization, string $audienceType, ?array $config = []): Collection
     {
         $config ??= [];
-        $recipients = collect();
 
-        match ($audienceType) {
-            CampaignAudienceResolver::TYPE_ALL_CONTACTS => $recipients = Contact::forOrganization($organization)
-                ->whereNotNull('phone')
-                ->where('phone', '!=', '')
-                ->orderBy('name')
-                ->get()
-                ->map(fn (Contact $c) => $this->recipientFromContact($c))
-                ->filter(),
-
-            CampaignAudienceResolver::TYPE_CONTACT_LIST => $recipients = $this->fromContactList($organization, $config),
-
-            CampaignAudienceResolver::TYPE_TAGS => $recipients = $this->fromTags($organization, $config),
-
-            CampaignAudienceResolver::TYPE_LEADS => $recipients = $organization->leads()
-                ->whereNotNull('phone')
-                ->where('phone', '!=', '')
-                ->orderBy('name')
-                ->get()
-                ->map(fn ($lead) => [
-                    'phone' => $lead->normalizedPhone(),
-                    'name' => $lead->name,
-                    'contact_id' => null,
-                    'lead_id' => $lead->id,
-                ]),
-
-            CampaignAudienceResolver::TYPE_MANUAL => $recipients = $this->fromManual($organization, $config),
-
-            CampaignAudienceResolver::TYPE_CSV => $recipients = $this->fromCsvConfig($organization, $config),
-
-            default => $recipients = collect(),
+        $recipients = match ($audienceType) {
+            CampaignAudienceResolver::TYPE_ALL_CONTACTS => $this->mapContacts(
+                Contact::forOrganization($organization)
+                    ->whereNotNull('phone')
+                    ->where('phone', '!=', '')
+            ),
+            CampaignAudienceResolver::TYPE_CONTACT_LIST => $this->fromContactList($organization, $config),
+            CampaignAudienceResolver::TYPE_TAGS => $this->fromTags($organization, $config),
+            CampaignAudienceResolver::TYPE_LEADS => $this->mapLeads(
+                $organization->leads()
+                    ->whereNotNull('phone')
+                    ->where('phone', '!=', '')
+            ),
+            CampaignAudienceResolver::TYPE_MANUAL => $this->fromManual($organization, $config),
+            CampaignAudienceResolver::TYPE_CSV => $this->fromCsvConfig($organization, $config),
+            default => collect(),
         };
 
         return $recipients
@@ -223,6 +208,49 @@ class ContactService
         ];
     }
 
+    private function mapContacts($query): Collection
+    {
+        $recipients = collect();
+
+        $query->select(['id', 'name', 'phone'])
+            ->orderBy('id')
+            ->chunkById(500, function ($chunk) use (&$recipients) {
+                foreach ($chunk as $contact) {
+                    $row = $this->recipientFromContact($contact);
+                    if ($row) {
+                        $recipients->push($row);
+                    }
+                }
+            });
+
+        return $recipients;
+    }
+
+    private function mapLeads($query): Collection
+    {
+        $recipients = collect();
+
+        $query->select(['id', 'name', 'phone'])
+            ->orderBy('id')
+            ->chunkById(500, function ($chunk) use (&$recipients) {
+                foreach ($chunk as $lead) {
+                    $phone = $lead->normalizedPhone();
+                    if (! $this->isValidPhone($phone)) {
+                        continue;
+                    }
+
+                    $recipients->push([
+                        'phone' => $phone,
+                        'name' => $lead->name,
+                        'contact_id' => null,
+                        'lead_id' => $lead->id,
+                    ]);
+                }
+            });
+
+        return $recipients;
+    }
+
     private function fromContactList(Organization $organization, array $config): Collection
     {
         $listId = $config['contact_list_id'] ?? null;
@@ -230,13 +258,12 @@ class ContactService
             return collect();
         }
 
-        return Contact::forOrganization($organization)
-            ->whereHas('lists', fn ($q) => $q->where('contact_lists.id', $listId))
-            ->whereNotNull('phone')
-            ->where('phone', '!=', '')
-            ->get()
-            ->map(fn (Contact $c) => $this->recipientFromContact($c))
-            ->filter();
+        return $this->mapContacts(
+            Contact::forOrganization($organization)
+                ->whereHas('lists', fn ($q) => $q->where('contact_lists.id', $listId))
+                ->whereNotNull('phone')
+                ->where('phone', '!=', '')
+        );
     }
 
     private function fromTags(Organization $organization, array $config): Collection
@@ -246,13 +273,12 @@ class ContactService
             return collect();
         }
 
-        return Contact::forOrganization($organization)
-            ->whereHas('tags', fn ($q) => $q->whereIn('contact_tags.id', $tagIds))
-            ->whereNotNull('phone')
-            ->where('phone', '!=', '')
-            ->get()
-            ->map(fn (Contact $c) => $this->recipientFromContact($c))
-            ->filter();
+        return $this->mapContacts(
+            Contact::forOrganization($organization)
+                ->whereHas('tags', fn ($q) => $q->whereIn('contact_tags.id', $tagIds))
+                ->whereNotNull('phone')
+                ->where('phone', '!=', '')
+        );
     }
 
     private function fromManual(Organization $organization, array $config): Collection
@@ -260,25 +286,23 @@ class ContactService
         $contactIds = $config['contact_ids'] ?? [];
         $leadIds = $config['lead_ids'] ?? [];
 
-        $fromContacts = Contact::forOrganization($organization)
-            ->whereIn('id', $contactIds)
-            ->whereNotNull('phone')
-            ->where('phone', '!=', '')
-            ->get()
-            ->map(fn (Contact $c) => $this->recipientFromContact($c))
-            ->filter();
+        $fromContacts = empty($contactIds)
+            ? collect()
+            : $this->mapContacts(
+                Contact::forOrganization($organization)
+                    ->whereIn('id', $contactIds)
+                    ->whereNotNull('phone')
+                    ->where('phone', '!=', '')
+            );
 
-        $fromLeads = $organization->leads()
-            ->whereIn('id', $leadIds)
-            ->whereNotNull('phone')
-            ->where('phone', '!=', '')
-            ->get()
-            ->map(fn ($lead) => [
-                'phone' => $lead->normalizedPhone(),
-                'name' => $lead->name,
-                'contact_id' => null,
-                'lead_id' => $lead->id,
-            ]);
+        $fromLeads = empty($leadIds)
+            ? collect()
+            : $this->mapLeads(
+                $organization->leads()
+                    ->whereIn('id', $leadIds)
+                    ->whereNotNull('phone')
+                    ->where('phone', '!=', '')
+            );
 
         return $fromContacts->merge($fromLeads);
     }

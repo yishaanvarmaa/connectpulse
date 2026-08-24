@@ -11,6 +11,7 @@ use App\Services\ContactService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class CampaignController extends Controller
@@ -32,39 +33,70 @@ class CampaignController extends Controller
         return view('org.campaigns.index', compact('campaigns'));
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): RedirectResponse|Response
     {
-        $organization = $request->user()->organization;
+        try {
+            $organization = $request->user()->organization;
 
-        $tags = ContactTag::forOrganization($organization)->withCount('contacts')->orderBy('name')->get();
-        $lists = ContactList::forOrganization($organization)->withCount('contacts')->orderBy('name')->get();
-        $contacts = $organization->contacts()->orderBy('name')->limit(500)->get();
-        $leads = $organization->leads()->whereNotNull('phone')->orderBy('name')->limit(500)->get();
+            if (! $organization) {
+                return redirect()
+                    ->route('org.campaigns.index')
+                    ->with('error', 'No organization found for your account.');
+            }
 
-        $defaults = [
-            'delay_min' => config('connectpulse.campaign_delay_min_seconds', 10),
-            'delay_max' => config('connectpulse.campaign_delay_max_seconds', 20),
-        ];
+            $tags = ContactTag::forOrganization($organization)->withCount('contacts')->orderBy('name')->get();
+            $lists = ContactList::forOrganization($organization)->withCount('contacts')->orderBy('name')->get();
+            $contacts = $organization->contacts()
+                ->select(['id', 'name', 'phone'])
+                ->orderBy('name')
+                ->limit(500)
+                ->get();
+            $leads = $organization->leads()
+                ->select(['id', 'name', 'phone'])
+                ->whereNotNull('phone')
+                ->where('phone', '!=', '')
+                ->orderBy('name')
+                ->limit(500)
+                ->get();
 
-        $audienceMeta = [
-            'total_contacts' => $organization->contacts()->count(),
-            'total_leads' => $organization->leads()->whereNotNull('phone')->count(),
-            'lists' => $lists->mapWithKeys(fn ($l) => [$l->id => $l->contacts_count])->all(),
-            'tags' => $tags->mapWithKeys(fn ($t) => [$t->id => $t->contacts_count])->all(),
-        ];
+            $defaults = [
+                'delay_min' => (int) config('connectpulse.campaign_delay_min_seconds', 10),
+                'delay_max' => (int) config('connectpulse.campaign_delay_max_seconds', 20),
+            ];
 
-        $businessName = $organization?->company_name ?: 'Your Business';
+            $audienceMeta = [
+                'total_contacts' => $organization->contacts()->count(),
+                'total_leads' => $organization->leads()->whereNotNull('phone')->where('phone', '!=', '')->count(),
+                'lists' => $lists->mapWithKeys(fn ($l) => [(string) $l->id => (int) $l->contacts_count])->all(),
+                'tags' => $tags->mapWithKeys(fn ($t) => [(string) $t->id => (int) $t->contacts_count])->all(),
+            ];
 
-        return view('org.campaigns.create', compact(
-            'tags',
-            'lists',
-            'contacts',
-            'leads',
-            'defaults',
-            'audienceMeta',
-            'organization',
-            'businessName',
-        ));
+            $businessName = $organization->company_name ?: 'Your Business';
+            $audienceMetaJson = json_encode(
+                $audienceMeta,
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
+            ) ?: '{}';
+
+            $html = view('org.campaigns.create', [
+                'tags' => $tags,
+                'lists' => $lists,
+                'contacts' => $contacts,
+                'leads' => $leads,
+                'defaults' => $defaults,
+                'audienceMeta' => $audienceMeta,
+                'audienceMetaJson' => $audienceMetaJson,
+                'organization' => $organization,
+                'businessName' => $businessName,
+            ])->render();
+
+            return response($html);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()
+                ->route('org.campaigns.index')
+                ->with('error', 'Could not open campaign composer: '.$e->getMessage());
+        }
     }
 
     public function store(Request $request): RedirectResponse
@@ -144,6 +176,10 @@ class CampaignController extends Controller
                 default => [],
             };
 
+            $scheduledAt = $validated['send_mode'] === 'schedule'
+                ? ($validated['scheduled_at'] ?? null)
+                : null;
+
             $campaign = $this->campaignService->createDraft($organization, $request->user(), [
                 'name' => $validated['name'],
                 'message_body' => $validated['message_body'],
@@ -151,7 +187,7 @@ class CampaignController extends Controller
                 'audience_config' => $audienceConfig,
                 'delay_min_seconds' => $minDelay,
                 'delay_max_seconds' => $maxDelay,
-                'scheduled_at' => $validated['send_mode'] === 'schedule' ? ($validated['scheduled_at'] ?? null) : null,
+                'scheduled_at' => $scheduledAt ?: null,
             ]);
 
             $debug('Draft created id='.$campaign->id);

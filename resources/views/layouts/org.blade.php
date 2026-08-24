@@ -8,7 +8,13 @@
     <x-brand.favicon />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @php
+        try {
+            echo app(\Illuminate\Foundation\Vite::class)(['resources/css/app.css', 'resources/js/app.js']);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    @endphp
 </head>
 <body class="h-full font-sans antialiased">
 <div class="flex h-full min-h-screen bg-slate-50">
@@ -37,9 +43,11 @@
         </x-org.topbar>
 
         @if(session('success'))
+            <div class="mx-4 mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 sm:mx-6 lg:mx-8">{{ session('success') }}</div>
             <div data-toast data-toast-type="success" class="hidden">{{ session('success') }}</div>
         @endif
         @if(session('error'))
+            <div class="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:mx-6 lg:mx-8">{{ session('error') }}</div>
             <div data-toast data-toast-type="error" class="hidden">{{ session('error') }}</div>
         @endif
         @if($errors->any() && ($errors->has('name') || $errors->has('phone') || $errors->has('source')))

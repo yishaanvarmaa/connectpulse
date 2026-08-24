@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Services\CreditService;
 use App\Services\OrganizationService;
+use App\Support\EmailAddress;
+use App\Support\PhoneNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -33,11 +35,16 @@ class OrganizationController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+            'mobile' => PhoneNumber::national((string) $request->input('mobile')),
+        ]);
+
         $validated = $request->validate([
             'company_name' => ['required', 'string', 'max:255'],
             'contact_person' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:organizations,email', 'unique:users,email'],
-            'mobile' => ['required', 'string', 'max:20'],
+            'mobile' => ['required', 'string', 'max:20', 'unique:organizations,mobile'],
             'password' => ['required', 'string', 'min:8'],
             'initial_credits' => ['nullable', 'integer', 'min:0'],
         ]);
@@ -69,13 +76,23 @@ class OrganizationController extends Controller
 
     public function update(Request $request, Organization $organization): RedirectResponse
     {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+            'mobile' => PhoneNumber::national((string) $request->input('mobile')),
+        ]);
+
         $validated = $request->validate([
             'contact_person' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:organizations,email,'.$organization->id],
-            'mobile' => ['required', 'string', 'max:20'],
+            'mobile' => ['required', 'string', 'max:20', 'unique:organizations,mobile,'.$organization->id],
         ]);
 
-        $organization->update($validated);
+        $organization->update([
+            'contact_person' => $validated['contact_person'],
+            'email' => $validated['email'],
+            'normalized_email' => EmailAddress::normalize($validated['email']),
+            'mobile' => $validated['mobile'],
+        ]);
 
         return back()->with('success', 'Organization details updated.');
     }

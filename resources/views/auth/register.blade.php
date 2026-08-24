@@ -10,9 +10,9 @@
 
 @section('auth-content')
 <h2 class="text-2xl font-bold text-slate-900">Create your account</h2>
-<p class="mt-1 text-sm text-slate-500">Free to start — set up your sales workspace</p>
+<p class="mt-1 text-sm text-slate-500">Get {{ (int) config('connectpulse.signup_bonus_credits', 15) }} free credits to test sending. One account per mobile number.</p>
 
-<form method="POST" action="{{ route('register') }}" class="mt-6 space-y-4">
+<form method="POST" action="{{ route('register') }}" class="relative mt-6 space-y-4">
     @csrf
     <div>
         <label for="company_name" class="mb-1.5 block text-sm font-medium text-slate-700">Business name</label>
@@ -30,8 +30,10 @@
     <div>
         <label for="email" class="mb-1.5 block text-sm font-medium text-slate-700">Work email</label>
         <input id="email" name="email" type="email" required value="{{ old('email') }}"
+               placeholder="you@company.com"
                class="block w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-[#635bff] focus:outline-none focus:ring-2 focus:ring-[#635bff]/20">
         @error('email')<p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>@enderror
+        <p class="mt-1.5 text-xs text-slate-400">Use a real inbox. Temporary or disposable emails are blocked.</p>
     </div>
     <div>
         <label for="mobile" class="mb-1.5 block text-sm font-medium text-slate-700">Mobile</label>
@@ -39,6 +41,11 @@
                placeholder="9876543210"
                class="block w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-[#635bff] focus:outline-none focus:ring-2 focus:ring-[#635bff]/20">
         @error('mobile')<p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>@enderror
+        <p class="mt-1.5 text-xs text-slate-400">10-digit Indian number. Each number can register only once.</p>
+    </div>
+    <div class="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+        <label for="website">Website</label>
+        <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
     </div>
     <div>
         <label for="password" class="mb-1.5 block text-sm font-medium text-slate-700">Password</label>

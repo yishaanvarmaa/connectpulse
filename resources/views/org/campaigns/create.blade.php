@@ -5,6 +5,7 @@
 @section('page-title', 'Create WhatsApp Campaign')
 @section('page-subtitle', 'Compose your message, then test and launch on the next screen')
 
+@section('content')
 @php
     $audienceLabels = [
         'all_contacts' => 'All customers',
@@ -15,9 +16,14 @@
         'csv' => 'Paste phone numbers',
     ];
     $whatsappConnected = $shellWhatsAppConnected ?? false;
+    $defaults = is_array($defaults ?? null) ? $defaults : ['delay_min' => 10, 'delay_max' => 20];
+    $audienceMetaJson = $audienceMetaJson ?? '{}';
+    $businessName = $businessName ?? 'Your Business';
+    $tags = $tags ?? collect();
+    $lists = $lists ?? collect();
+    $contacts = $contacts ?? collect();
+    $leads = $leads ?? collect();
 @endphp
-
-@section('content')
 <div class="wa-composer-page pb-28 lg:pb-24">
     <div class="wa-composer-hero">
         <div class="mx-auto max-w-7xl">
@@ -41,7 +47,7 @@
     </div>
 
     <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
-        <div id="whatsapp-warning" @class(['wa-composer-error mb-5', 'hidden' => $whatsappConnected])>
+        <div id="whatsapp-warning" class="wa-composer-error mb-5 {{ $whatsappConnected ? 'hidden' : '' }}">
             <svg class="mt-0.5 h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             <div>
                 <p class="font-medium">WhatsApp is not connected</p>
@@ -159,7 +165,7 @@
                                 <label class="text-xs font-medium text-slate-600">Choose tags</label>
                                 <div class="flex flex-wrap gap-2">
                                     @foreach($tags as $tag)
-                                        <label class="wa-composer-chip wa-composer-chip-selectable has-[:checked]:wa-composer-chip-active">
+                                        <label class="wa-composer-chip wa-composer-chip-selectable">
                                             <input type="checkbox" name="tag_ids[]" value="{{ $tag->id }}" class="sr-only" @checked(in_array($tag->id, (array) old('tag_ids', [])))>
                                             {{ $tag->name }}
                                             <span class="text-slate-400">({{ $tag->contacts_count }})</span>
@@ -322,7 +328,7 @@
                 <label class="text-xs font-medium text-slate-600">Choose tags</label>
                 <div class="flex flex-wrap gap-2" id="tags-mobile-wrap">
                     @foreach($tags as $tag)
-                        <label class="wa-composer-chip wa-composer-chip-selectable has-[:checked]:wa-composer-chip-active">
+                        <label class="wa-composer-chip wa-composer-chip-selectable">
                             <input type="checkbox" value="{{ $tag->id }}" class="sr-only tag-mobile-cb">
                             {{ $tag->name }} ({{ $tag->contacts_count }})
                         </label>
@@ -378,7 +384,7 @@
     </div>
 </div>
 
-<script type="application/json" id="campaign-audience-meta">@json($audienceMeta)</script>
+<script type="application/json" id="campaign-audience-meta">{!! $audienceMetaJson !!}</script>
 <span id="campaign-business-name" class="hidden">{{ $businessName }}</span>
 <span id="campaign-whatsapp-connected" class="hidden">{{ $whatsappConnected ? '1' : '0' }}</span>
 @endsection

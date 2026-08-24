@@ -100,21 +100,30 @@ class CampaignService
                     continue;
                 }
 
+                $phone = (string) $entry['phone'];
+                if ($phone === '' || ! $this->contactService->isValidPhone($phone)) {
+                    continue;
+                }
+
                 $rendered = $this->renderMessage($campaign->message_body, $entry['name'] ?? null);
 
-                CampaignRecipient::updateOrCreate(
-                    [
-                        'campaign_id' => $campaign->id,
-                        'phone' => (string) $entry['phone'],
-                    ],
-                    [
-                        'contact_id' => ! empty($entry['contact_id']) ? (int) $entry['contact_id'] : null,
-                        'lead_id' => ! empty($entry['lead_id']) ? (int) $entry['lead_id'] : null,
-                        'name' => $entry['name'] ?? null,
-                        'rendered_message' => $rendered,
-                        'status' => CampaignRecipient::STATUS_PENDING,
-                    ]
-                );
+                try {
+                    CampaignRecipient::updateOrCreate(
+                        [
+                            'campaign_id' => $campaign->id,
+                            'phone' => $phone,
+                        ],
+                        [
+                            'contact_id' => ! empty($entry['contact_id']) ? (int) $entry['contact_id'] : null,
+                            'lead_id' => ! empty($entry['lead_id']) ? (int) $entry['lead_id'] : null,
+                            'name' => $entry['name'] ?? null,
+                            'rendered_message' => $rendered,
+                            'status' => CampaignRecipient::STATUS_PENDING,
+                        ]
+                    );
+                } catch (\Throwable) {
+                    continue;
+                }
             }
 
             $total = $campaign->recipients()->count();

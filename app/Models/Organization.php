@@ -16,6 +16,7 @@ class Organization extends Model
         'company_name',
         'contact_person',
         'email',
+        'normalized_email',
         'mobile',
         'status',
     ];
