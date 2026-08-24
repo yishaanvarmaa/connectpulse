@@ -69,28 +69,44 @@ class CampaignController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $organization = $request->user()->organization;
+        $debugLog = storage_path('logs/campaign-debug.log');
+        $debug = function (string $message) use ($debugLog): void {
+            @file_put_contents(
+                $debugLog,
+                '['.now()->toDateTimeString().'] '.$message.PHP_EOL,
+                FILE_APPEND
+            );
+        };
 
-        if (! $organization) {
-            return redirect()
-                ->route('org.campaigns.index')
-                ->with('error', 'No organization found for your account.');
-        }
-
-        // Defaults so a missing delay field never hard-fails the request.
-        $request->merge([
-            'delay_min_seconds' => $request->input(
-                'delay_min_seconds',
-                config('connectpulse.campaign_delay_min_seconds', 10)
-            ),
-            'delay_max_seconds' => $request->input(
-                'delay_max_seconds',
-                config('connectpulse.campaign_delay_max_seconds', 20)
-            ),
-            'send_mode' => $request->input('send_mode', 'now'),
-        ]);
+        $debug('STORE hit by user #'.($request->user()?->id ?? 'guest').' ip='.$request->ip());
 
         try {
+            $organization = $request->user()->organization;
+
+            if (! $organization) {
+                $debug('No organization on user');
+
+                return redirect()
+                    ->route('org.campaigns.index')
+                    ->with('error', 'No organization found for your account.');
+            }
+
+            // Defaults so a missing delay field never hard-fails the request.
+            $request->merge([
+                'delay_min_seconds' => $request->input(
+                    'delay_min_seconds',
+                    config('connectpulse.campaign_delay_min_seconds', 10)
+                ),
+                'delay_max_seconds' => $request->input(
+                    'delay_max_seconds',
+                    config('connectpulse.campaign_delay_max_seconds', 20)
+                ),
+                'send_mode' => $request->input('send_mode', 'now'),
+            ]);
+
+            $debug('Payload keys: '.implode(',', array_keys($request->except(['media', '_token']))));
+            $debug('Has media: '.($request->hasFile('media') ? 'yes' : 'no'));
+
             $validated = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
                 'message_body' => ['required', 'string', 'max:4096'],
@@ -109,20 +125,9 @@ class CampaignController extends Controller
                 'scheduled_at' => ['nullable', 'required_if:send_mode,schedule', 'date', 'after:now'],
                 'media' => ['nullable', 'file', 'max:5120'],
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (\Throwable $e) {
-            report($e);
 
-            return redirect()
-                ->route('org.campaigns.create')
-                ->withInput()
-                ->with('error', 'Validation failed: '.$e->getMessage());
-        }
+            $debug('Validated audience_type='.$validated['audience_type']);
 
-        $campaign = null;
-
-        try {
             [$minDelay, $maxDelay] = $this->campaignService->validateDelayRange(
                 (int) $validated['delay_min_seconds'],
                 (int) $validated['delay_max_seconds'],
@@ -149,58 +154,71 @@ class CampaignController extends Controller
                 'scheduled_at' => $validated['send_mode'] === 'schedule' ? ($validated['scheduled_at'] ?? null) : null,
             ]);
 
+            $debug('Draft created id='.$campaign->id);
+
             if ($request->hasFile('media')) {
                 $file = $request->file('media');
-                $mime = (string) $file->getMimeType();
-                if (! str_starts_with($mime, 'image/')) {
+                $mime = (string) ($file->getMimeType() ?: '');
+                $debug('Media mime='.$mime.' size='.$file->getSize());
+                if ($mime !== '' && ! str_starts_with($mime, 'image/')) {
                     return redirect()
                         ->route('org.campaigns.create')
                         ->withInput()
                         ->with('error', 'Please upload an image file (JPG, PNG, WebP, or GIF).');
                 }
                 $this->campaignService->storeMedia($campaign, $file);
+                $debug('Media stored path='.$campaign->fresh()->media_path);
             }
 
             $recipientCount = $this->campaignService->buildRecipients($campaign);
-        } catch (\Throwable $e) {
-            report($e);
-            \Illuminate\Support\Facades\Log::error('Campaign store failed', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ]);
+            $debug('Recipients built count='.$recipientCount);
 
-            if ($campaign) {
+            if ($recipientCount <= 0) {
                 return redirect()
                     ->route('org.campaigns.show', $campaign)
-                    ->with('error', 'Campaign saved partially, but recipients failed: '.$e->getMessage());
+                    ->with('error', 'Campaign saved, but no valid recipients were found. Check your audience.');
             }
+
+            $debug('STORE success → redirect show #'.$campaign->id);
+
+            return redirect()
+                ->route('org.campaigns.show', $campaign)
+                ->with('success', 'Campaign saved. Send yourself a test message, then launch.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $debug('VALIDATION: '.json_encode($e->errors()));
+            throw $e;
+        } catch (\Throwable $e) {
+            $debug('ERROR '.$e::class.': '.$e->getMessage().' @ '.$e->getFile().':'.$e->getLine());
+            report($e);
 
             return redirect()
                 ->route('org.campaigns.create')
                 ->withInput()
                 ->with('error', 'Could not save campaign: '.$e->getMessage());
         }
-
-        if ($recipientCount <= 0) {
-            return redirect()
-                ->route('org.campaigns.show', $campaign)
-                ->with('error', 'Campaign saved, but no valid recipients were found. Check your audience.');
-        }
-
-        return redirect()
-            ->route('org.campaigns.show', $campaign)
-            ->with('success', 'Campaign saved. Send yourself a test message, then launch.');
     }
 
     public function show(Request $request, Campaign $campaign): View|RedirectResponse
     {
+        $debugLog = storage_path('logs/campaign-debug.log');
+        @file_put_contents(
+            $debugLog,
+            '['.now()->toDateTimeString().'] SHOW hit campaign #'.$campaign->id.PHP_EOL,
+            FILE_APPEND
+        );
+
         $this->authorize('view', $campaign);
 
         try {
             $stats = $this->campaignService->getLiveStats($campaign);
             $recipients = $campaign->recipients()->orderByDesc('updated_at')->paginate(50);
             $mediaUrl = $this->campaignService->mediaUrl($campaign);
+
+            @file_put_contents(
+                $debugLog,
+                '['.now()->toDateTimeString().'] SHOW ok #'.$campaign->id.PHP_EOL,
+                FILE_APPEND
+            );
 
             return view('org.campaigns.show', [
                 'campaign' => $stats['campaign'],
@@ -212,11 +230,12 @@ class CampaignController extends Controller
                 'mediaUrl' => $mediaUrl,
             ]);
         } catch (\Throwable $e) {
+            @file_put_contents(
+                $debugLog,
+                '['.now()->toDateTimeString().'] SHOW ERROR '.$e::class.': '.$e->getMessage().' @ '.$e->getFile().':'.$e->getLine().PHP_EOL,
+                FILE_APPEND
+            );
             report($e);
-            \Illuminate\Support\Facades\Log::error('Campaign show failed', [
-                'campaign_id' => $campaign->id,
-                'message' => $e->getMessage(),
-            ]);
 
             return redirect()
                 ->route('org.campaigns.index')
