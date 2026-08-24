@@ -9,9 +9,10 @@
 
 @php
     $showLaunchWizard = $campaign->status === 'draft';
-    $testSent = $campaign->hasTestBeenSent();
-    $canLaunch = $campaign->canLaunch();
+    $testSent = filled($campaign->test_phone);
+    $canLaunch = $campaign->status === 'draft' && (bool) $campaign->test_confirmed;
     $hasSchedule = $campaign->scheduled_at && $campaign->scheduled_at->isFuture();
+    $canDelete = in_array($campaign->status, ['draft', 'completed', 'cancelled'], true);
 @endphp
 
 @section('content')
@@ -22,7 +23,7 @@
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
             All campaigns
         </a>
-        @if($campaign->canBeDeleted())
+        @if($canDelete)
             <form method="POST" action="{{ route('org.campaigns.destroy', $campaign) }}" onsubmit="return confirm('Delete this campaign permanently?');">
                 @csrf
                 @method('DELETE')
@@ -40,170 +41,107 @@
         </div>
     @endif
 
-    {{-- Step-by-step launch for drafts --}}
     @if($showLaunchWizard)
-        <div class="cp-card mb-4 overflow-hidden">
-            <div class="border-b border-slate-100 bg-slate-50 px-4 py-3 sm:px-5">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Step 2 of 2 · Test &amp; launch</p>
-                <h2 class="mt-0.5 text-base font-semibold text-slate-900">Almost ready — check your message first</h2>
+        <div class="cp-card mb-4">
+            <div class="cp-card-header">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Step 2 of 2</p>
+                <h2 class="text-sm font-semibold text-slate-900">Test and launch</h2>
             </div>
-            <div class="divide-y divide-slate-100">
-                {{-- Step 1: Review --}}
-                <div class="px-4 py-4 sm:px-5">
-                    <div class="flex items-start gap-3">
-                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">✓</span>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-sm font-semibold text-slate-900">1. Review message</p>
-                            <p class="mt-0.5 text-xs text-slate-500">{{ number_format($campaign->total_recipients) }} recipients · {{ $campaign->delay_min_seconds }}–{{ $campaign->delay_max_seconds }}s between sends</p>
-                            <div class="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-                                @if($mediaUrl)
-                                    <img src="{{ $mediaUrl }}" alt="Campaign photo" class="mb-2 max-h-40 rounded-lg object-cover">
-                                @endif
-                                <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ $campaign->message_body }}</p>
+            <div class="cp-card-body space-y-5">
+                <div>
+                    <p class="text-sm font-semibold text-slate-900">1. Review message</p>
+                    <p class="mt-0.5 text-xs text-slate-500">{{ number_format($campaign->total_recipients) }} recipients</p>
+                    <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        @if(!empty($mediaUrl))
+                            <img src="{{ $mediaUrl }}" alt="Campaign photo" class="mb-2 max-h-40 rounded-lg object-cover">
+                        @endif
+                        <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ $campaign->message_body }}</p>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-sm font-semibold text-slate-900">2. Send a test to your phone</p>
+                    <p class="mt-0.5 text-xs text-slate-500">
+                        We will send the exact campaign message@if(!empty($mediaUrl)) with your photo@endif.
+                    </p>
+                    @if(! $campaign->test_confirmed)
+                        <form method="POST" action="{{ route('org.campaigns.test', $campaign) }}" class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+                            @csrf
+                            <div class="flex-1">
+                                <label for="test_phone" class="mb-1 block text-xs font-medium text-slate-600">Your WhatsApp number</label>
+                                <input type="text" name="test_phone" id="test_phone" value="{{ old('test_phone', $campaign->test_phone) }}" placeholder="919876543210" required class="cp-input w-full">
+                                <p class="mt-1 text-[11px] text-slate-400">Country code, no + or spaces</p>
                             </div>
-                        </div>
-                    </div>
+                            <button type="submit" class="cp-btn-primary shrink-0">{{ $testSent ? 'Resend test' : 'Send test now' }}</button>
+                        </form>
+                    @else
+                        <p class="mt-2 text-sm text-emerald-700">Test confirmed@if($campaign->test_phone) for +{{ $campaign->test_phone }}@endif</p>
+                    @endif
                 </div>
 
-                {{-- Step 2: Send test --}}
-                <div class="px-4 py-4 sm:px-5">
-                    <div class="flex items-start gap-3">
-                        <span @class([
-                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                            'bg-emerald-100 text-emerald-700' => $testSent || $campaign->test_confirmed,
-                            'bg-brand-100 text-brand-700' => ! $testSent && ! $campaign->test_confirmed,
-                        ])>
-                            {{ ($testSent || $campaign->test_confirmed) ? '✓' : '2' }}
-                        </span>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-sm font-semibold text-slate-900">2. Send a test to your phone</p>
-                            <p class="mt-0.5 text-xs text-slate-500">
-                                We’ll send the exact campaign message
-                                @if($mediaUrl)<span class="font-medium text-slate-700">including your photo</span>@endif
-                                so you can check how it looks.
-                            </p>
-
-                            @if(! $campaign->test_confirmed)
-                                <form method="POST" action="{{ route('org.campaigns.test', $campaign) }}" class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
-                                    @csrf
-                                    <div class="flex-1">
-                                        <label for="test_phone" class="mb-1 block text-xs font-medium text-slate-600">Your WhatsApp number</label>
-                                        <input
-                                            type="text"
-                                            name="test_phone"
-                                            id="test_phone"
-                                            value="{{ old('test_phone', $campaign->test_phone) }}"
-                                            placeholder="919876543210"
-                                            required
-                                            class="cp-input w-full"
-                                        >
-                                        <p class="mt-1 text-[11px] text-slate-400">Include country code, no + or spaces</p>
-                                    </div>
-                                    <button type="submit" class="cp-btn-primary shrink-0">
-                                        {{ $testSent ? 'Resend test' : 'Send test now' }}
-                                    </button>
-                                </form>
-                            @else
-                                <p class="mt-2 text-sm text-emerald-700">Test confirmed@if($campaign->test_phone) for +{{ $campaign->test_phone }}@endif</p>
-                            @endif
-                        </div>
-                    </div>
+                <div>
+                    <p class="text-sm font-semibold text-slate-900">3. Confirm you received it</p>
+                    @if($campaign->test_confirmed)
+                        <p class="mt-0.5 text-xs text-emerald-700">Ready to launch.</p>
+                    @elseif($testSent)
+                        <p class="mt-0.5 text-xs text-slate-500">Check WhatsApp, then confirm below.</p>
+                        <form method="POST" action="{{ route('org.campaigns.confirm-test', $campaign) }}" class="mt-3">
+                            @csrf
+                            <button type="submit" class="cp-btn-secondary">Yes, I received the test</button>
+                        </form>
+                    @else
+                        <p class="mt-0.5 text-xs text-slate-400">Send a test first.</p>
+                    @endif
                 </div>
 
-                {{-- Step 3: Confirm --}}
-                <div class="px-4 py-4 sm:px-5">
-                    <div class="flex items-start gap-3">
-                        <span @class([
-                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                            'bg-emerald-100 text-emerald-700' => $campaign->test_confirmed,
-                            'bg-slate-100 text-slate-500' => ! $campaign->test_confirmed,
-                        ])>
-                            {{ $campaign->test_confirmed ? '✓' : '3' }}
-                        </span>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-sm font-semibold text-slate-900">3. Confirm you received it</p>
-                            @if($campaign->test_confirmed)
-                                <p class="mt-0.5 text-xs text-emerald-700">You’re ready to launch.</p>
-                            @elseif($testSent)
-                                <p class="mt-0.5 text-xs text-slate-500">Open WhatsApp and check the test. If photo + text look good, confirm below.</p>
-                                <form method="POST" action="{{ route('org.campaigns.confirm-test', $campaign) }}" class="mt-3">
-                                    @csrf
-                                    <button type="submit" class="cp-btn-secondary">Yes, I received the test</button>
-                                </form>
-                            @else
-                                <p class="mt-0.5 text-xs text-slate-400">Send a test first, then confirm here.</p>
-                            @endif
-                        </div>
-                    </div>
-                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-sm font-semibold text-slate-900">4. Launch campaign</p>
+                    @if($hasSchedule)
+                        <p class="mt-0.5 text-xs text-slate-500">Scheduled for {{ $campaign->scheduled_at->format('M j, Y g:i A') }}</p>
+                    @else
+                        <p class="mt-0.5 text-xs text-slate-500">Messages start after you launch.</p>
+                    @endif
 
-                {{-- Step 4: Launch --}}
-                <div class="px-4 py-4 sm:px-5 bg-slate-50/80">
-                    <div class="flex items-start gap-3">
-                        <span @class([
-                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                            'bg-brand-600 text-white' => $canLaunch,
-                            'bg-slate-200 text-slate-500' => ! $canLaunch,
-                        ])>4</span>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-sm font-semibold text-slate-900">4. Launch campaign</p>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        @if($canLaunch)
+                            <form method="POST" action="{{ route('org.campaigns.launch', $campaign) }}">
+                                @csrf
+                                <input type="hidden" name="send_now" value="{{ $hasSchedule ? '0' : '1' }}">
+                                <button type="submit" class="cp-btn-primary">{{ $hasSchedule ? 'Schedule launch' : 'Launch now' }}</button>
+                            </form>
                             @if($hasSchedule)
-                                <p class="mt-0.5 text-xs text-slate-500">Scheduled for {{ $campaign->scheduled_at->format('M j, Y · g:i A') }}</p>
-                            @else
-                                <p class="mt-0.5 text-xs text-slate-500">Messages will start sending one by one after you launch.</p>
+                                <form method="POST" action="{{ route('org.campaigns.launch', $campaign) }}">
+                                    @csrf
+                                    <input type="hidden" name="send_now" value="1">
+                                    <button type="submit" class="cp-btn-secondary">Send now instead</button>
+                                </form>
                             @endif
-
-                            <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                                @if($canLaunch)
-                                    <form method="POST" action="{{ route('org.campaigns.launch', $campaign) }}">
-                                        @csrf
-                                        @if($hasSchedule)
-                                            <input type="hidden" name="send_now" value="0">
-                                            <button type="submit" class="wa-composer-btn-launch">Schedule launch</button>
-                                        @else
-                                            <input type="hidden" name="send_now" value="1">
-                                            <button type="submit" class="wa-composer-btn-launch">Launch now</button>
-                                        @endif
-                                    </form>
-                                    @if($hasSchedule)
-                                        <form method="POST" action="{{ route('org.campaigns.launch', $campaign) }}">
-                                            @csrf
-                                            <input type="hidden" name="send_now" value="1">
-                                            <button type="submit" class="cp-btn-secondary">Send now instead</button>
-                                        </form>
-                                    @endif
-                                @else
-                                    <button type="button" class="wa-composer-btn-launch opacity-50" disabled>Launch locked</button>
-                                    <span class="text-xs text-slate-500">Complete the test steps above first</span>
-                                @endif
-                            </div>
-
-                            @if(! $campaign->test_confirmed)
-                                <details class="mt-4 text-xs text-slate-500">
-                                    <summary class="cursor-pointer font-medium text-slate-600 hover:text-slate-800">Skip test (not recommended)</summary>
-                                    <form method="POST" action="{{ route('org.campaigns.launch', $campaign) }}" class="mt-2" onsubmit="return confirm('Launch without testing? Your photo and message won’t be checked first.');">
-                                        @csrf
-                                        <input type="hidden" name="skip_test" value="1">
-                                        <input type="hidden" name="send_now" value="{{ $hasSchedule ? '0' : '1' }}">
-                                        <button type="submit" class="cp-btn-ghost !text-xs text-amber-700">Skip test and launch anyway</button>
-                                    </form>
-                                </details>
-                            @endif
-                        </div>
+                        @else
+                            <button type="button" class="cp-btn-primary opacity-50" disabled>Launch locked</button>
+                            <span class="self-center text-xs text-slate-500">Complete the test steps first</span>
+                        @endif
                     </div>
+
+                    @if(! $campaign->test_confirmed)
+                        <form method="POST" action="{{ route('org.campaigns.launch', $campaign) }}" class="mt-3" onsubmit="return confirm('Launch without testing?');">
+                            @csrf
+                            <input type="hidden" name="skip_test" value="1">
+                            <input type="hidden" name="send_now" value="{{ $hasSchedule ? '0' : '1' }}">
+                            <button type="submit" class="text-xs font-medium text-amber-700 hover:underline">Skip test and launch anyway</button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>
     @endif
 
-    {{-- Live progress (active / finished campaigns) --}}
     @if(! $showLaunchWizard)
         <div class="cp-card mb-4">
             <div class="cp-card-body">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         @php
-                            $statusBadge = match($campaign->status) {
+                            $statusBadge = match ($campaign->status) {
                                 'running' => 'bg-emerald-100 text-emerald-800',
                                 'scheduled' => 'bg-blue-100 text-blue-800',
                                 'completed' => 'bg-slate-100 text-slate-700',
@@ -272,25 +210,16 @@
 
     @if($campaign->status === 'completed')
         <div class="cp-card mb-4">
-            <div class="cp-card-header">
-                <h2 class="text-sm font-semibold text-slate-900">Campaign completed</h2>
-            </div>
-            <div class="cp-card-body grid gap-3 sm:grid-cols-2 text-sm">
+            <div class="cp-card-header"><h2 class="text-sm font-semibold text-slate-900">Campaign completed</h2></div>
+            <div class="cp-card-body grid gap-3 text-sm sm:grid-cols-2">
                 <div><span class="text-slate-500">Recipients</span><p class="font-medium">{{ $campaign->total_recipients }}</p></div>
                 <div><span class="text-slate-500">Sent</span><p class="font-medium text-emerald-700">{{ $campaign->sent_count }}</p></div>
                 <div><span class="text-slate-500">Failed</span><p class="font-medium text-red-600">{{ $campaign->failed_count }}</p></div>
                 <div><span class="text-slate-500">Credits used</span><p class="font-medium">{{ $campaign->credits_used }}</p></div>
-                @if($campaign->started_at)
-                    <div><span class="text-slate-500">Started</span><p class="font-medium">{{ $campaign->started_at->format('M j, g:i A') }}</p></div>
-                @endif
-                @if($campaign->completed_at)
-                    <div><span class="text-slate-500">Completed</span><p class="font-medium">{{ $campaign->completed_at->format('M j, g:i A') }}</p></div>
-                @endif
             </div>
         </div>
     @endif
 
-    {{-- Message preview for non-draft --}}
     @if(! $showLaunchWizard && ($mediaUrl || $campaign->message_body))
         <div class="cp-card mb-4">
             <div class="cp-card-header"><h2 class="text-sm font-semibold">Message</h2></div>
@@ -316,7 +245,7 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-2 text-xs">
                         @php
-                            $rBadge = match($recipient->status) {
+                            $rBadge = match ($recipient->status) {
                                 'sent', 'delivered' => 'bg-emerald-100 text-emerald-800',
                                 'failed', 'skipped' => 'bg-red-100 text-red-700',
                                 'sending' => 'bg-blue-100 text-blue-800',
@@ -327,11 +256,8 @@
                         @if($recipient->sent_at)
                             <span class="text-slate-500">{{ $recipient->sent_at->format('g:i A') }}</span>
                         @endif
-                        @if($recipient->attempts > 1)
-                            <span class="text-slate-400">{{ $recipient->attempts }} attempts</span>
-                        @endif
                         @if($recipient->failure_reason)
-                            <span class="text-red-600">{{ Str::limit($recipient->failure_reason, 40) }}</span>
+                            <span class="text-red-600">{{ \Illuminate\Support\Str::limit($recipient->failure_reason, 40) }}</span>
                         @endif
                     </div>
                 </div>
@@ -345,7 +271,7 @@
     </div>
 </div>
 
-@if(in_array($campaign->status, ['running', 'paused', 'scheduled']))
+@if(in_array($campaign->status, ['running', 'paused', 'scheduled'], true))
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const dashboard = document.getElementById('campaign-dashboard');
@@ -356,20 +282,20 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch(statusUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
             .then(r => r.json())
             .then(data => {
-                document.getElementById('sent-count') && (document.getElementById('sent-count').textContent = data.sent_count);
-                document.getElementById('total-count') && (document.getElementById('total-count').textContent = data.total_recipients);
-                document.getElementById('stat-sent') && (document.getElementById('stat-sent').textContent = data.sent_count);
-                document.getElementById('stat-pending') && (document.getElementById('stat-pending').textContent = data.pending_count);
-                document.getElementById('stat-failed') && (document.getElementById('stat-failed').textContent = data.failed_count);
-                document.getElementById('stat-credits') && (document.getElementById('stat-credits').textContent = data.credits_used);
-                document.getElementById('progress-bar') && (document.getElementById('progress-bar').style.width = data.progress_percent + '%');
-                document.getElementById('progress-percent') && (document.getElementById('progress-percent').textContent = data.progress_percent);
-
+                const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+                set('sent-count', data.sent_count);
+                set('total-count', data.total_recipients);
+                set('stat-sent', data.sent_count);
+                set('stat-pending', data.pending_count);
+                set('stat-failed', data.failed_count);
+                set('stat-credits', data.credits_used);
+                set('progress-percent', data.progress_percent);
+                const bar = document.getElementById('progress-bar');
+                if (bar) bar.style.width = data.progress_percent + '%';
                 if (data.current_recipient) {
                     const el = document.getElementById('current-recipient');
                     if (el) el.textContent = (data.current_recipient.name || 'Unknown') + ' · +' + data.current_recipient.phone;
                 }
-
                 if (['completed', 'cancelled'].includes(data.status)) {
                     clearInterval(interval);
                     location.reload();

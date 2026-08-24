@@ -96,17 +96,21 @@ class CampaignService
             ])->delete();
 
             foreach ($audience as $entry) {
-                $rendered = $this->renderMessage($campaign->message_body, $entry['name']);
+                if (! is_array($entry) || empty($entry['phone'])) {
+                    continue;
+                }
+
+                $rendered = $this->renderMessage($campaign->message_body, $entry['name'] ?? null);
 
                 CampaignRecipient::updateOrCreate(
                     [
                         'campaign_id' => $campaign->id,
-                        'phone' => $entry['phone'],
+                        'phone' => (string) $entry['phone'],
                     ],
                     [
-                        'contact_id' => $entry['contact_id'],
-                        'lead_id' => $entry['lead_id'],
-                        'name' => $entry['name'],
+                        'contact_id' => ! empty($entry['contact_id']) ? (int) $entry['contact_id'] : null,
+                        'lead_id' => ! empty($entry['lead_id']) ? (int) $entry['lead_id'] : null,
+                        'name' => $entry['name'] ?? null,
                         'rendered_message' => $rendered,
                         'status' => CampaignRecipient::STATUS_PENDING,
                     ]
@@ -117,7 +121,7 @@ class CampaignService
             $campaign->update(['total_recipients' => $total]);
         });
 
-        return $campaign->fresh()->total_recipients;
+        return (int) ($campaign->fresh()->total_recipients ?? 0);
     }
 
     public function sendTest(Campaign $campaign, string $testPhone): array

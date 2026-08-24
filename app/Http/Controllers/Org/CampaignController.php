@@ -77,24 +77,50 @@ class CampaignController extends Controller
                 ->with('error', 'No organization found for your account.');
         }
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'message_body' => ['required', 'string', 'max:4096'],
-            'audience_type' => ['required', 'in:'.implode(',', array_keys(Campaign::audienceTypes()))],
-            'contact_list_id' => ['nullable', 'integer'],
-            'tag_ids' => ['nullable', 'array'],
-            'tag_ids.*' => ['integer'],
-            'contact_ids' => ['nullable', 'array'],
-            'contact_ids.*' => ['integer'],
-            'lead_ids' => ['nullable', 'array'],
-            'lead_ids.*' => ['integer'],
-            'csv_phones' => ['nullable', 'string'],
-            'delay_min_seconds' => ['required', 'integer', 'min:5', 'max:300'],
-            'delay_max_seconds' => ['required', 'integer', 'min:5', 'max:300'],
-            'send_mode' => ['required', 'in:now,schedule'],
-            'scheduled_at' => ['nullable', 'required_if:send_mode,schedule', 'date', 'after:now'],
-            'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:5120'],
+        // Defaults so a missing delay field never hard-fails the request.
+        $request->merge([
+            'delay_min_seconds' => $request->input(
+                'delay_min_seconds',
+                config('connectpulse.campaign_delay_min_seconds', 10)
+            ),
+            'delay_max_seconds' => $request->input(
+                'delay_max_seconds',
+                config('connectpulse.campaign_delay_max_seconds', 20)
+            ),
+            'send_mode' => $request->input('send_mode', 'now'),
         ]);
+
+        try {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'message_body' => ['required', 'string', 'max:4096'],
+                'audience_type' => ['required', 'in:'.implode(',', array_keys(Campaign::audienceTypes()))],
+                'contact_list_id' => ['nullable', 'integer'],
+                'tag_ids' => ['nullable', 'array'],
+                'tag_ids.*' => ['integer'],
+                'contact_ids' => ['nullable', 'array'],
+                'contact_ids.*' => ['integer'],
+                'lead_ids' => ['nullable', 'array'],
+                'lead_ids.*' => ['integer'],
+                'csv_phones' => ['nullable', 'string'],
+                'delay_min_seconds' => ['required', 'integer', 'min:5', 'max:300'],
+                'delay_max_seconds' => ['required', 'integer', 'min:5', 'max:300'],
+                'send_mode' => ['required', 'in:now,schedule'],
+                'scheduled_at' => ['nullable', 'required_if:send_mode,schedule', 'date', 'after:now'],
+                'media' => ['nullable', 'file', 'max:5120'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()
+                ->route('org.campaigns.create')
+                ->withInput()
+                ->with('error', 'Validation failed: '.$e->getMessage());
+        }
+
+        $campaign = null;
 
         try {
             [$minDelay, $maxDelay] = $this->campaignService->validateDelayRange(
@@ -124,12 +150,31 @@ class CampaignController extends Controller
             ]);
 
             if ($request->hasFile('media')) {
-                $this->campaignService->storeMedia($campaign, $request->file('media'));
+                $file = $request->file('media');
+                $mime = (string) $file->getMimeType();
+                if (! str_starts_with($mime, 'image/')) {
+                    return redirect()
+                        ->route('org.campaigns.create')
+                        ->withInput()
+                        ->with('error', 'Please upload an image file (JPG, PNG, WebP, or GIF).');
+                }
+                $this->campaignService->storeMedia($campaign, $file);
             }
 
             $recipientCount = $this->campaignService->buildRecipients($campaign);
         } catch (\Throwable $e) {
             report($e);
+            \Illuminate\Support\Facades\Log::error('Campaign store failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            if ($campaign) {
+                return redirect()
+                    ->route('org.campaigns.show', $campaign)
+                    ->with('error', 'Campaign saved partially, but recipients failed: '.$e->getMessage());
+            }
 
             return redirect()
                 ->route('org.campaigns.create')
@@ -148,23 +193,35 @@ class CampaignController extends Controller
             ->with('success', 'Campaign saved. Send yourself a test message, then launch.');
     }
 
-    public function show(Request $request, Campaign $campaign): View
+    public function show(Request $request, Campaign $campaign): View|RedirectResponse
     {
         $this->authorize('view', $campaign);
 
-        $stats = $this->campaignService->getLiveStats($campaign);
-        $recipients = $campaign->recipients()->orderByDesc('updated_at')->paginate(50);
-        $mediaUrl = $this->campaignService->mediaUrl($campaign);
+        try {
+            $stats = $this->campaignService->getLiveStats($campaign);
+            $recipients = $campaign->recipients()->orderByDesc('updated_at')->paginate(50);
+            $mediaUrl = $this->campaignService->mediaUrl($campaign);
 
-        return view('org.campaigns.show', [
-            'campaign' => $stats['campaign'],
-            'progressPercent' => $stats['progress_percent'],
-            'pendingCount' => $stats['pending_count'],
-            'currentRecipient' => $stats['current_recipient'],
-            'estimatedCompletion' => $stats['estimated_completion'],
-            'recipients' => $recipients,
-            'mediaUrl' => $mediaUrl,
-        ]);
+            return view('org.campaigns.show', [
+                'campaign' => $stats['campaign'],
+                'progressPercent' => $stats['progress_percent'],
+                'pendingCount' => $stats['pending_count'],
+                'currentRecipient' => $stats['current_recipient'],
+                'estimatedCompletion' => $stats['estimated_completion'],
+                'recipients' => $recipients,
+                'mediaUrl' => $mediaUrl,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+            \Illuminate\Support\Facades\Log::error('Campaign show failed', [
+                'campaign_id' => $campaign->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return redirect()
+                ->route('org.campaigns.index')
+                ->with('error', 'Could not open campaign: '.$e->getMessage());
+        }
     }
 
     public function status(Request $request, Campaign $campaign): JsonResponse

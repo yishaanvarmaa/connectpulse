@@ -62,7 +62,7 @@
                                 @endif
                             </div>
                             @if($campaign->canBeDeleted())
-                                <form method="POST" action="{{ route('org.campaigns.destroy', $campaign) }}" onsubmit="return confirm('Delete “{{ $campaign->name }}”? This cannot be undone.');">
+                                <form method="POST" action="{{ route('org.campaigns.destroy', $campaign) }}" onsubmit="return confirm('Delete this campaign?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" title="Delete campaign" aria-label="Delete campaign">
