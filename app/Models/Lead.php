@@ -239,6 +239,6 @@ class Lead extends Model
 
     public function normalizedPhone(): string
     {
-        return preg_replace('/[^0-9]/', '', $this->phone) ?? $this->phone;
+        return preg_replace('/[^0-9]/', '', (string) ($this->phone ?? '')) ?: '';
     }
 }
