@@ -71,6 +71,12 @@ class CampaignController extends Controller
     {
         $organization = $request->user()->organization;
 
+        if (! $organization) {
+            return redirect()
+                ->route('org.campaigns.index')
+                ->with('error', 'No organization found for your account.');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'message_body' => ['required', 'string', 'max:4096'],
@@ -86,41 +92,50 @@ class CampaignController extends Controller
             'delay_min_seconds' => ['required', 'integer', 'min:5', 'max:300'],
             'delay_max_seconds' => ['required', 'integer', 'min:5', 'max:300'],
             'send_mode' => ['required', 'in:now,schedule'],
-            'scheduled_at' => ['nullable', 'date', 'after:now'],
+            'scheduled_at' => ['nullable', 'required_if:send_mode,schedule', 'date', 'after:now'],
             'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:5120'],
         ]);
 
-        [$minDelay, $maxDelay] = $this->campaignService->validateDelayRange(
-            (int) $validated['delay_min_seconds'],
-            (int) $validated['delay_max_seconds'],
-        );
+        try {
+            [$minDelay, $maxDelay] = $this->campaignService->validateDelayRange(
+                (int) $validated['delay_min_seconds'],
+                (int) $validated['delay_max_seconds'],
+            );
 
-        $audienceConfig = match ($validated['audience_type']) {
-            Campaign::AUDIENCE_CONTACT_LIST => ['contact_list_id' => $validated['contact_list_id'] ?? null],
-            Campaign::AUDIENCE_TAGS => ['tag_ids' => $validated['tag_ids'] ?? []],
-            Campaign::AUDIENCE_MANUAL => [
-                'contact_ids' => $validated['contact_ids'] ?? [],
-                'lead_ids' => $validated['lead_ids'] ?? [],
-            ],
-            Campaign::AUDIENCE_CSV => ['phones' => $this->parseCsvPhones($validated['csv_phones'] ?? '')],
-            default => [],
-        };
+            $audienceConfig = match ($validated['audience_type']) {
+                Campaign::AUDIENCE_CONTACT_LIST => ['contact_list_id' => $validated['contact_list_id'] ?? null],
+                Campaign::AUDIENCE_TAGS => ['tag_ids' => $validated['tag_ids'] ?? []],
+                Campaign::AUDIENCE_MANUAL => [
+                    'contact_ids' => $validated['contact_ids'] ?? [],
+                    'lead_ids' => $validated['lead_ids'] ?? [],
+                ],
+                Campaign::AUDIENCE_CSV => ['phones' => $this->parseCsvPhones($validated['csv_phones'] ?? '')],
+                default => [],
+            };
 
-        $campaign = $this->campaignService->createDraft($organization, $request->user(), [
-            'name' => $validated['name'],
-            'message_body' => $validated['message_body'],
-            'audience_type' => $validated['audience_type'],
-            'audience_config' => $audienceConfig,
-            'delay_min_seconds' => $minDelay,
-            'delay_max_seconds' => $maxDelay,
-            'scheduled_at' => $validated['send_mode'] === 'schedule' ? ($validated['scheduled_at'] ?? null) : null,
-        ]);
+            $campaign = $this->campaignService->createDraft($organization, $request->user(), [
+                'name' => $validated['name'],
+                'message_body' => $validated['message_body'],
+                'audience_type' => $validated['audience_type'],
+                'audience_config' => $audienceConfig,
+                'delay_min_seconds' => $minDelay,
+                'delay_max_seconds' => $maxDelay,
+                'scheduled_at' => $validated['send_mode'] === 'schedule' ? ($validated['scheduled_at'] ?? null) : null,
+            ]);
 
-        if ($request->hasFile('media')) {
-            $this->campaignService->storeMedia($campaign, $request->file('media'));
+            if ($request->hasFile('media')) {
+                $this->campaignService->storeMedia($campaign, $request->file('media'));
+            }
+
+            $recipientCount = $this->campaignService->buildRecipients($campaign);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()
+                ->route('org.campaigns.create')
+                ->withInput()
+                ->with('error', 'Could not save campaign: '.$e->getMessage());
         }
-
-        $recipientCount = $this->campaignService->buildRecipients($campaign);
 
         if ($recipientCount <= 0) {
             return redirect()

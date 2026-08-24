@@ -245,19 +245,19 @@
 
                         <button type="button" data-sheet-open="sending-sheet" class="mt-3 w-full cp-btn-secondary !text-xs lg:hidden">Sending speed settings</button>
 
-                        <div class="mt-4 sending-desktop-only hidden lg:block space-y-2">
+                        <div class="mt-4 space-y-2">
                             <p class="text-xs font-medium text-slate-600">Seconds between each message</p>
                             <div class="flex flex-wrap items-center gap-2 text-sm text-slate-700">
-                                <input type="number" name="delay_min_seconds" value="{{ old('delay_min_seconds', $defaults['delay_min']) }}" min="5" max="300" class="wa-composer-input !w-16 text-center">
+                                <input type="number" name="delay_min_seconds" id="delay-min-seconds" value="{{ old('delay_min_seconds', $defaults['delay_min']) }}" min="5" max="300" class="wa-composer-input !w-16 text-center" required>
                                 <span class="text-slate-500">–</span>
-                                <input type="number" name="delay_max_seconds" value="{{ old('delay_max_seconds', $defaults['delay_max']) }}" min="5" max="300" class="wa-composer-input !w-16 text-center">
+                                <input type="number" name="delay_max_seconds" id="delay-max-seconds" value="{{ old('delay_max_seconds', $defaults['delay_max']) }}" min="5" max="300" class="wa-composer-input !w-16 text-center" required>
                                 <span class="text-slate-500">sec</span>
                             </div>
                             <p class="text-xs text-slate-500">Slower sends are safer for WhatsApp accounts.</p>
                         </div>
 
                         <div class="wa-composer-alert mt-4">
-                            Only message people who opted in. You’re responsible for consent and WhatsApp policy compliance.
+                            Only message people who opted in. You are responsible for consent and WhatsApp policy compliance.
                         </div>
                     </div>
 

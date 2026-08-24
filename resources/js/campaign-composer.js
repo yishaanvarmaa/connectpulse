@@ -73,6 +73,7 @@ export function initCampaignComposer() {
             els.charCount.textContent = `${raw.length} / 4096`;
         }
         updateStatus();
+        updateValidation();
     }
 
     function updatePreviewBusiness() {
@@ -197,6 +198,8 @@ export function initCampaignComposer() {
         const errors = getValidationErrors();
         const canSave = errors.length === 0;
 
+        // Keep the banner in sync, but never leave Save stuck disabled —
+        // submit handler still blocks incomplete forms.
         if (els.validationBanner) {
             els.validationBanner.classList.toggle('hidden', canSave);
             if (els.validationText) {
@@ -204,8 +207,14 @@ export function initCampaignComposer() {
             }
         }
 
-        if (els.saveBtn) els.saveBtn.disabled = !canSave;
-        if (els.stickySaveBtn) els.stickySaveBtn.disabled = !canSave;
+        if (els.saveBtn) {
+            els.saveBtn.disabled = false;
+            els.saveBtn.setAttribute('aria-disabled', canSave ? 'false' : 'true');
+        }
+        if (els.stickySaveBtn) {
+            els.stickySaveBtn.disabled = false;
+            els.stickySaveBtn.setAttribute('aria-disabled', canSave ? 'false' : 'true');
+        }
 
         if (els.whatsappWarning) {
             els.whatsappWarning.classList.toggle('hidden', whatsappConnected);

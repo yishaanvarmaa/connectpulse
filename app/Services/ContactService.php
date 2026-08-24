@@ -13,13 +13,17 @@ class ContactService
         private MessageService $messageService,
     ) {}
 
-    public function normalizePhone(string $phone): string
+    public function normalizePhone(?string $phone): string
     {
-        return $this->messageService->normalizeMobile($phone);
+        return $this->messageService->normalizeMobile((string) ($phone ?? ''));
     }
 
-    public function isValidPhone(string $phone): bool
+    public function isValidPhone(?string $phone): bool
     {
+        if ($phone === null || trim($phone) === '') {
+            return false;
+        }
+
         $normalized = $this->normalizePhone($phone);
 
         return strlen($normalized) >= 10 && strlen($normalized) <= 15;
@@ -168,9 +172,12 @@ class ContactService
 
         match ($audienceType) {
             CampaignAudienceResolver::TYPE_ALL_CONTACTS => $recipients = Contact::forOrganization($organization)
+                ->whereNotNull('phone')
+                ->where('phone', '!=', '')
                 ->orderBy('name')
                 ->get()
-                ->map(fn (Contact $c) => $this->recipientFromContact($c)),
+                ->map(fn (Contact $c) => $this->recipientFromContact($c))
+                ->filter(),
 
             CampaignAudienceResolver::TYPE_CONTACT_LIST => $recipients = $this->fromContactList($organization, $config),
 
@@ -178,6 +185,7 @@ class ContactService
 
             CampaignAudienceResolver::TYPE_LEADS => $recipients = $organization->leads()
                 ->whereNotNull('phone')
+                ->where('phone', '!=', '')
                 ->orderBy('name')
                 ->get()
                 ->map(fn ($lead) => [
@@ -195,15 +203,20 @@ class ContactService
         };
 
         return $recipients
-            ->filter(fn ($r) => $this->isValidPhone($r['phone']))
+            ->filter(fn ($r) => is_array($r) && $this->isValidPhone($r['phone'] ?? null))
             ->unique('phone')
             ->values();
     }
 
-    private function recipientFromContact(Contact $contact): array
+    private function recipientFromContact(Contact $contact): ?array
     {
+        $phone = $contact->normalizedPhone();
+        if (! $this->isValidPhone($phone)) {
+            return null;
+        }
+
         return [
-            'phone' => $contact->normalizedPhone(),
+            'phone' => $phone,
             'name' => $contact->name,
             'contact_id' => $contact->id,
             'lead_id' => null,
@@ -219,8 +232,11 @@ class ContactService
 
         return Contact::forOrganization($organization)
             ->whereHas('lists', fn ($q) => $q->where('contact_lists.id', $listId))
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
             ->get()
-            ->map(fn (Contact $c) => $this->recipientFromContact($c));
+            ->map(fn (Contact $c) => $this->recipientFromContact($c))
+            ->filter();
     }
 
     private function fromTags(Organization $organization, array $config): Collection
@@ -232,8 +248,11 @@ class ContactService
 
         return Contact::forOrganization($organization)
             ->whereHas('tags', fn ($q) => $q->whereIn('contact_tags.id', $tagIds))
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
             ->get()
-            ->map(fn (Contact $c) => $this->recipientFromContact($c));
+            ->map(fn (Contact $c) => $this->recipientFromContact($c))
+            ->filter();
     }
 
     private function fromManual(Organization $organization, array $config): Collection
@@ -243,11 +262,16 @@ class ContactService
 
         $fromContacts = Contact::forOrganization($organization)
             ->whereIn('id', $contactIds)
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
             ->get()
-            ->map(fn (Contact $c) => $this->recipientFromContact($c));
+            ->map(fn (Contact $c) => $this->recipientFromContact($c))
+            ->filter();
 
         $fromLeads = $organization->leads()
             ->whereIn('id', $leadIds)
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
             ->get()
             ->map(fn ($lead) => [
                 'phone' => $lead->normalizedPhone(),
