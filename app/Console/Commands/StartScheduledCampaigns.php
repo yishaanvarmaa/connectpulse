@@ -26,6 +26,7 @@ class StartScheduledCampaigns extends Command
             ]);
 
             ProcessCampaignRecipientJob::dispatch($campaign->id)
+                ->onConnection('database')
                 ->onQueue('campaigns');
         }
 

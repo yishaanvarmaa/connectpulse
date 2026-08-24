@@ -385,6 +385,7 @@ class CampaignService
 
         if ($campaign->status === Campaign::STATUS_RUNNING) {
             ProcessCampaignRecipientJob::dispatch($campaign->id)
+                ->onConnection('database')
                 ->onQueue('campaigns');
         }
 
