@@ -27,8 +27,8 @@
             </div>
         </div>
     </x-marketing.browser-frame>
-    <div class="mkt-float-card--light absolute -bottom-4 -left-2 sm:-left-6 rounded-2xl px-5 py-4 sm:px-6">
+    <div class="mkt-float-card--light absolute bottom-3 left-3 right-3 rounded-2xl px-4 py-3 sm:bottom-4 sm:left-4 sm:right-auto sm:px-6 sm:py-4">
         <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pipeline</p>
-        <p class="text-3xl font-extrabold text-slate-900">₹1.24L</p>
+        <p class="text-2xl font-extrabold text-slate-900 sm:text-3xl">₹1.24L</p>
     </div>
 </div>

@@ -26,17 +26,19 @@
                     <span>CRM</span><span>WhatsApp</span><span>Follow-ups</span><span>Pipeline</span>
                 </div>
             </div>
-            <div class="mkt-reveal lg:-mr-8 xl:-mr-16">
+            <div class="mkt-reveal min-w-0 lg:mr-0 xl:mr-0">
                 <x-marketing.mockups.hero-dashboard />
             </div>
         </div>
     </div>
     <div class="mkt-trust-strip mt-10 lg:mt-14">
-        <div class="mkt-wrap flex flex-wrap items-center justify-center sm:flex-nowrap">
-            @foreach(['Leads', 'Follow-ups', 'WhatsApp', 'Pipeline', 'Reports', 'Automation'] as $i => $item)
-                @if($i > 0)<span class="mkt-trust-strip__divider"></span>@endif
-                <span class="mkt-trust-strip__item">{{ $item }}</span>
-            @endforeach
+        <div class="mkt-wrap">
+            <div class="mkt-trust-strip__track">
+                @foreach(['Leads', 'Follow-ups', 'WhatsApp', 'Pipeline', 'Reports', 'Automation'] as $i => $item)
+                    @if($i > 0)<span class="mkt-trust-strip__divider"></span>@endif
+                    <span class="mkt-trust-strip__item">{{ $item }}</span>
+                @endforeach
+            </div>
         </div>
     </div>
 </section>
@@ -86,17 +88,17 @@
             <p class="mkt-eyebrow mkt-eyebrow--light">Product</p>
             <h2 class="mkt-h2 mt-3 text-slate-900">One place to run your sales.</h2>
         </div>
-        <div class="relative mt-10 lg:mt-12 mkt-reveal">
+        <div class="relative mt-10 lg:mt-12 mkt-reveal mkt-showcase">
             <x-marketing.mockups.hero-dashboard />
-            <div class="mkt-float-card--light absolute -left-2 top-8 hidden rounded-2xl px-4 py-3 sm:block lg:-left-8">
+            <div class="mkt-float-card--light absolute left-3 top-6 hidden rounded-2xl px-4 py-3 sm:block lg:left-4">
                 <p class="text-[10px] font-bold uppercase text-red-600">Overdue</p>
                 <p class="text-2xl font-bold text-slate-900">3</p>
             </div>
-            <div class="mkt-float-card--light absolute right-4 top-1/4 hidden rounded-2xl px-4 py-3 sm:block lg:right-0">
+            <div class="mkt-float-card--light absolute right-3 top-1/4 hidden rounded-2xl px-4 py-3 sm:block">
                 <p class="text-[10px] font-bold uppercase text-slate-500">Pipeline</p>
                 <p class="text-2xl font-bold text-slate-900">₹1.24L</p>
             </div>
-            <div class="mkt-float-card--light absolute -right-2 bottom-12 hidden rounded-2xl px-4 py-3 sm:block lg:-right-6">
+            <div class="mkt-float-card--light absolute bottom-10 right-3 hidden rounded-2xl px-4 py-3 sm:block">
                 <p class="text-[10px] font-bold uppercase text-[#635bff]">New leads</p>
                 <p class="text-2xl font-bold text-slate-900">5</p>
             </div>
@@ -133,7 +135,7 @@
                 <div class="mkt-bento-card h-full">
                     <p class="text-xs font-bold uppercase tracking-wider text-[#635bff]">Follow-ups</p>
                     <h3 class="mt-2 text-xl font-bold text-slate-900">Never forget the next action.</h3>
-                    <div class="mt-4 scale-[0.95] origin-top-left">
+                    <div class="mt-4 overflow-hidden rounded-xl origin-top-left">
                         <x-marketing.mockups.followups />
                     </div>
                 </div>
@@ -211,7 +213,7 @@
         <div class="mkt-reveal mb-10 max-w-2xl">
             <h2 class="mkt-h2 text-white">See where every deal is going.</h2>
         </div>
-        <div class="mkt-reveal">
+        <div class="mkt-reveal overflow-hidden">
             <x-marketing.mockups.pipeline />
         </div>
     </div>
@@ -241,18 +243,18 @@
             <h2 class="mkt-h2 text-white">Your sales desk.<br>In your pocket.</h2>
             <p class="mx-auto mt-4 max-w-xl mkt-body">Check follow-ups, message leads, call customers, update deals — from your phone.</p>
         </div>
-        <div class="relative mt-12 flex flex-wrap justify-center gap-6 sm:gap-10 mkt-reveal">
+        <div class="relative mt-12 flex flex-wrap justify-center gap-6 overflow-hidden px-2 sm:gap-10 mkt-reveal">
             <div class="relative">
                 <x-marketing.mockups.mobile-screen variant="home" />
-                <span class="mkt-notif-float -right-4 top-8 sm:-right-12">Follow-up due in 10 min</span>
+                <span class="mkt-notif-float left-1/2 top-6 -translate-x-1/2 sm:left-auto sm:right-0 sm:top-8 sm:translate-x-0 sm:-mr-2 md:-mr-6">Follow-up due in 10 min</span>
             </div>
             <div class="relative hidden sm:block">
                 <x-marketing.mockups.mobile-screen variant="lead" />
-                <span class="mkt-notif-float -left-8 top-1/2">₹24,999 opportunity</span>
+                <span class="mkt-notif-float left-0 top-1/2 -translate-y-1/2 -ml-2 md:-ml-6">₹24,999 opportunity</span>
             </div>
             <div class="relative hidden md:block">
                 <x-marketing.mockups.mobile-screen variant="followup" />
-                <span class="mkt-notif-float -right-6 bottom-8">New lead received</span>
+                <span class="mkt-notif-float right-0 bottom-8 -mr-2 lg:-mr-4">New lead received</span>
             </div>
         </div>
     </div>
@@ -290,12 +292,12 @@
                 <p class="mkt-eyebrow">Developers</p>
                 <h2 class="mt-3 mkt-h2 text-white">And yes,<br>there's an API too.</h2>
                 <p class="mt-4 mkt-body">Connect WhatsApp to your own applications. Send report notifications, appointment reminders, payment receipts and transactional messages through a simple REST API.</p>
-                <div class="mt-8 flex flex-wrap items-center gap-3 text-sm">
-                    <span class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-semibold text-white">WhatsApp</span>
-                    <span class="text-[#8b7cff]">→</span>
-                    <span class="rounded-lg border border-[#635bff]/30 bg-[#635bff]/10 px-3 py-2 font-semibold text-[#8b7cff]">ConnectPulse API</span>
-                    <span class="text-[#8b7cff]">→</span>
-                    <span class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-semibold text-white">Your Application</span>
+                <div class="mt-8 flex flex-col flex-wrap items-stretch gap-2 text-sm sm:flex-row sm:items-center sm:gap-3">
+                    <span class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-center font-semibold text-white">WhatsApp</span>
+                    <span class="hidden text-center text-[#8b7cff] sm:inline">→</span>
+                    <span class="rounded-lg border border-[#635bff]/30 bg-[#635bff]/10 px-3 py-2 text-center font-semibold text-[#8b7cff]">ConnectPulse API</span>
+                    <span class="hidden text-center text-[#8b7cff] sm:inline">→</span>
+                    <span class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-center font-semibold text-white">Your Application</span>
                 </div>
                 <a href="{{ route('pricing') }}#whatsapp-messaging" class="mkt-btn mkt-btn--ghost mt-8">Explore WhatsApp API</a>
             </div>

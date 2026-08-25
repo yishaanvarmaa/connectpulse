@@ -9,12 +9,12 @@
             <a href="{{ route('org.search') }}" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden" aria-label="Search">
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </a>
-            <div class="min-w-0 hidden sm:block lg:block">
+            <div class="min-w-0 flex-1">
                 @if($title)
-                    <h1 class="truncate text-base font-semibold text-slate-900">{{ $title }}</h1>
+                    <h1 class="truncate text-sm font-semibold text-slate-900 sm:text-base">{{ $title }}</h1>
                 @endif
                 @if($subtitle)
-                    <p class="truncate text-xs text-slate-500">{{ $subtitle }}</p>
+                    <p class="hidden truncate text-xs text-slate-500 sm:block">{{ $subtitle }}</p>
                 @endif
             </div>
         </div>
@@ -34,7 +34,7 @@
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                         <span class="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{{ min($shellNotificationCount, 9) }}{{ $shellNotificationCount > 9 ? '+' : '' }}</span>
                     </button>
-                    <div id="notifications-panel" class="hidden absolute right-0 mt-2 w-72 rounded-xl border border-slate-200 bg-white py-2 shadow-lg">
+                    <div id="notifications-panel" class="hidden absolute right-0 mt-2 w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-slate-200 bg-white py-2 shadow-lg">
                         <p class="px-4 py-2 text-xs font-semibold uppercase text-slate-400">Notifications</p>
                         @foreach($shellNotifications ?? [] as $note)
                             <a href="{{ $note['url'] }}" class="block px-4 py-2.5 text-sm hover:bg-slate-50 {{ $note['type'] === 'danger' ? 'text-red-700' : ($note['type'] === 'warning' ? 'text-amber-800' : 'text-slate-700') }}">

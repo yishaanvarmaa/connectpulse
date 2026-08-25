@@ -33,10 +33,10 @@
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <button type="button" data-whatsapp-open data-lead-name="{{ $lead->name }}" data-whatsapp-url="{{ route('org.crm.leads.whatsapp', $lead) }}" class="cp-btn-success">WhatsApp</button>
-            <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary">Call</a>
-            <a href="#log-interaction" class="cp-btn-primary">Log call result</a>
-            <a href="{{ route('org.crm.leads.edit', $lead) }}" class="cp-btn-ghost">Edit</a>
+            <button type="button" data-whatsapp-open data-lead-name="{{ $lead->name }}" data-whatsapp-url="{{ route('org.crm.leads.whatsapp', $lead) }}" class="cp-btn-success flex-1 sm:flex-none">WhatsApp</button>
+            <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary flex-1 text-center sm:flex-none">Call</a>
+            <a href="#log-interaction" class="cp-btn-primary flex-1 text-center sm:flex-none">Log call result</a>
+            <a href="{{ route('org.crm.leads.edit', $lead) }}" class="cp-btn-ghost w-full text-center sm:w-auto">Edit</a>
         </div>
     </div>
 </div>

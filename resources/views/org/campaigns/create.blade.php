@@ -24,7 +24,7 @@
     $contacts = $contacts ?? collect();
     $leads = $leads ?? collect();
 @endphp
-<div class="wa-composer-page pb-28 lg:pb-24">
+<div class="wa-composer-page pb-36 lg:pb-24">
     <div class="wa-composer-hero">
         <div class="mx-auto max-w-7xl">
             <a href="{{ route('org.campaigns.index') }}" class="mb-3 inline-flex items-center gap-1.5 text-sm text-indigo-200/80 transition-colors hover:text-white lg:hidden">

@@ -51,12 +51,23 @@ function initMarketingNav() {
     window.addEventListener('scroll', updateNav, { passive: true });
     updateNav();
 
+    const setMenuOpen = (open) => {
+        panel?.classList.toggle('is-open', open);
+        toggle?.setAttribute('aria-expanded', open ? 'true' : 'false');
+        document.body.classList.toggle('overflow-hidden', open);
+    };
+
     toggle?.addEventListener('click', () => {
-        panel?.classList.toggle('is-open');
-        toggle.setAttribute('aria-expanded', panel?.classList.contains('is-open') ? 'true' : 'false');
+        setMenuOpen(!panel?.classList.contains('is-open'));
     });
 
     panel?.querySelectorAll('a').forEach((link) => {
-        link.addEventListener('click', () => panel.classList.remove('is-open'));
+        link.addEventListener('click', () => setMenuOpen(false));
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.matchMedia('(min-width: 768px)').matches) {
+            setMenuOpen(false);
+        }
     });
 }

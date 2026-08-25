@@ -16,8 +16,8 @@
         }
     @endphp
 </head>
-<body class="h-full font-sans antialiased">
-<div class="flex h-full min-h-screen bg-slate-50">
+<body class="h-full font-sans antialiased overflow-x-clip">
+<div class="flex h-full min-h-screen max-w-[100vw] overflow-x-clip bg-slate-50">
     {{-- Desktop sidebar --}}
     <aside class="hidden lg:flex lg:w-60 lg:flex-col lg:fixed lg:inset-y-0 border-r border-slate-200/80 bg-white">
         <x-org.sidebar />
@@ -54,8 +54,8 @@
             <div data-toast data-toast-type="error" class="hidden">{{ $errors->first() }}</div>
         @endif
 
-        <main class="flex-1 overflow-y-auto scrollbar-thin">
-            <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8 pb-24 lg:pb-8">
+        <main class="flex-1 overflow-x-clip overflow-y-auto scrollbar-thin">
+            <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8 pb-28 lg:pb-8">
                 @yield('content')
             </div>
         </main>

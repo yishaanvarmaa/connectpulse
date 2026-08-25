@@ -7,11 +7,13 @@
 
 @section('content')
 {{-- Date range --}}
-<div class="mb-5 flex flex-wrap gap-2">
-    @foreach(['today' => 'Today', '7d' => '7 Days', '30d' => '30 Days', '90d' => '90 Days', 'all' => 'All time'] as $key => $label)
-        <a href="{{ route('org.crm.reports.index', array_merge(request()->except('period', 'page'), ['period' => $key])) }}"
-           class="cp-filter-chip {{ ($period ?? '30d') === $key ? 'cp-filter-chip-active' : '' }}">{{ $label }}</a>
-    @endforeach
+<div class="mb-5 -mx-1 overflow-x-auto scrollbar-thin">
+    <div class="flex min-w-max gap-2 px-1 pb-1">
+        @foreach(['today' => 'Today', '7d' => '7 Days', '30d' => '30 Days', '90d' => '90 Days', 'all' => 'All time'] as $key => $label)
+            <a href="{{ route('org.crm.reports.index', array_merge(request()->except('period', 'page'), ['period' => $key])) }}"
+               class="cp-filter-chip {{ ($period ?? '30d') === $key ? 'cp-filter-chip-active' : '' }}">{{ $label }}</a>
+        @endforeach
+    </div>
 </div>
 
 {{-- KPIs --}}

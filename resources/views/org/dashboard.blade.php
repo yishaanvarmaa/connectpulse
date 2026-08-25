@@ -53,16 +53,18 @@
             <div class="divide-y divide-slate-100">
                 @forelse(($followUpGroups['today'] ?? collect()) as $followUp)
                     @php $lead = $followUp->lead; @endphp
-                    <div class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/80">
-                        <span class="w-14 shrink-0 text-xs font-semibold text-slate-500">{{ $followUp->scheduled_at->format('h:i A') }}</span>
-                        <div class="min-w-0 flex-1">
-                            <a href="{{ route('org.crm.leads.show', $lead) }}" class="block truncate text-sm font-medium text-slate-900">{{ $lead->name }}</a>
-                            <p class="truncate text-xs text-slate-500">{{ $followUp->typeLabel() }}</p>
+                    <div class="px-4 py-3 hover:bg-slate-50/80">
+                        <div class="flex items-start gap-3">
+                            <span class="w-14 shrink-0 pt-0.5 text-xs font-semibold text-slate-500">{{ $followUp->scheduled_at->format('h:i A') }}</span>
+                            <div class="min-w-0 flex-1">
+                                <a href="{{ route('org.crm.leads.show', $lead) }}" class="block truncate text-sm font-medium text-slate-900">{{ $lead->name }}</a>
+                                <p class="truncate text-xs text-slate-500">{{ $followUp->typeLabel() }}</p>
+                            </div>
                         </div>
-                        <div class="flex shrink-0 gap-1">
-                            <button type="button" data-whatsapp-open data-lead-name="{{ $lead->name }}" data-whatsapp-url="{{ route('org.crm.leads.whatsapp', $lead) }}" class="cp-btn-success !px-2 !py-1 text-xs">WA</button>
-                            <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary !px-2 !py-1 text-xs">Call</a>
-                            <button type="button" data-sheet-open="complete-{{ $followUp->id }}" class="cp-btn-primary !px-2 !py-1 text-xs">Done</button>
+                        <div class="mt-2 flex flex-wrap gap-1.5 pl-[3.75rem]">
+                            <button type="button" data-whatsapp-open data-lead-name="{{ $lead->name }}" data-whatsapp-url="{{ route('org.crm.leads.whatsapp', $lead) }}" class="cp-btn-success !px-2.5 !py-1.5 text-xs">WA</button>
+                            <a href="tel:{{ $lead->phone }}" class="cp-btn-secondary !px-2.5 !py-1.5 text-xs">Call</a>
+                            <button type="button" data-sheet-open="complete-{{ $followUp->id }}" class="cp-btn-primary !px-2.5 !py-1.5 text-xs">Done</button>
                         </div>
                     </div>
                     <x-crm.complete-followup-sheet :follow-up="$followUp" :lead="$lead" />

@@ -1,8 +1,8 @@
 {{-- Large hero dashboard mockup --}}
-<div class="relative mkt-float-slow">
-    <div class="absolute -inset-4 rounded-3xl bg-[#635bff]/20 blur-3xl"></div>
-    <x-marketing.browser-frame class="relative w-full">
-        <div class="flex min-h-[340px] sm:min-h-[420px] lg:min-h-[480px]">
+<div class="relative mkt-float-slow max-w-full">
+    <div class="pointer-events-none absolute inset-0 -z-10 rounded-3xl bg-[#635bff]/20 blur-3xl"></div>
+    <x-marketing.browser-frame class="relative w-full max-w-full">
+        <div class="flex min-h-[300px] sm:min-h-[420px] lg:min-h-[480px]">
             <div class="hidden w-16 shrink-0 border-r border-white/5 bg-[#0d1020] lg:block">
                 <div class="flex h-14 items-center justify-center border-b border-white/5">
                     <x-brand.icon size="sm" />

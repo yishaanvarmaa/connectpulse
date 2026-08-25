@@ -6,7 +6,7 @@
 @section('page-subtitle', 'WhatsApp conversations')
 
 @section('content')
-<div class="flex flex-col xl:grid xl:grid-cols-12 xl:gap-0 xl:-mx-6 xl:border xl:border-slate-200 xl:rounded-xl xl:overflow-hidden xl:bg-white xl:min-h-[70vh]">
+<div class="flex flex-col xl:grid xl:grid-cols-12 xl:gap-0 xl:border xl:border-slate-200 xl:rounded-xl xl:overflow-hidden xl:bg-white xl:min-h-[70vh]">
     {{-- Conversation list --}}
     <div class="{{ $selectedMobile ? 'hidden xl:block' : '' }} xl:col-span-3 border-b xl:border-b-0 xl:border-r border-slate-200">
         <div class="divide-y divide-slate-100 max-h-[60vh] xl:max-h-none overflow-y-auto">

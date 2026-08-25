@@ -1,6 +1,6 @@
 @props(['light' => false, 'url' => 'connectpulse.cloud/dashboard'])
 
-<div {{ $attributes->merge(['class' => 'mkt-browser' . ($light ? ' mkt-browser--light' : '')]) }}>
+<div {{ $attributes->merge(['class' => 'mkt-browser' . ($light ? ' mkt-browser--light' : '') . ' max-w-full']) }}>
     <div class="mkt-browser__chrome">
         <span class="mkt-browser__dot bg-red-500/80"></span>
         <span class="mkt-browser__dot bg-amber-500/80"></span>
