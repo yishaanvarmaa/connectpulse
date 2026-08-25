@@ -1,17 +1,19 @@
 /* ConnectPulse Marketing — Premium product-led design system */
 
 html:has(body.mkt-page) {
-    overflow-x: clip;
+    overflow-x: hidden;
 }
 
 .mkt-page {
     @apply bg-[#080b18] text-white antialiased;
-    overflow-x: clip;
-    max-width: 100vw;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
 }
 
 .mkt-wrap {
     @apply mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-8;
+    box-sizing: border-box;
 }
 
 .mkt-section {
@@ -138,7 +140,7 @@ html:has(body.mkt-page) {
 }
 
 .mkt-hero {
-    @apply relative overflow-hidden pt-24 pb-0 sm:pt-28 lg:pt-32;
+    @apply relative pt-24 pb-6 sm:pt-28 sm:pb-8 lg:pt-32 lg:pb-10;
     background: radial-gradient(ellipse 80% 60% at 70% 20%, rgba(99, 91, 255, 0.22) 0%, transparent 55%),
         radial-gradient(ellipse 50% 40% at 20% 80%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
         #080b18;
@@ -168,13 +170,12 @@ html:has(body.mkt-page) {
 }
 
 .mkt-browser {
-    @apply max-w-full overflow-hidden rounded-xl border border-white/10 bg-[#0d1020];
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 25px 80px -20px rgba(99, 91, 255, 0.35), 0 40px 100px -40px rgba(0,0,0,0.6);
+    @apply w-full max-w-full overflow-hidden rounded-xl border border-white/10 bg-[#0d1020];
 }
 
 .mkt-browser--light {
     @apply border-slate-200/80 bg-white;
-    box-shadow: 0 0 0 1px rgba(15,23,42,0.06), 0 25px 60px -20px rgba(15,23,42,0.15);
+    box-shadow: 0 0 0 1px rgba(15,23,42,0.06), 0 20px 48px -18px rgba(15,23,42,0.18);
 }
 
 .mkt-browser__chrome {
@@ -205,8 +206,62 @@ html:has(body.mkt-page) {
     @apply border-slate-200/80 bg-white text-slate-900 shadow-lg;
 }
 
+/* Product screenshot stage — full UI visible, framed like a real product photo */
+.mkt-product-shot {
+    @apply relative mx-auto w-full max-w-full;
+}
+
+.mkt-product-shot__glow {
+    @apply pointer-events-none absolute -inset-3 -z-10 rounded-[1.75rem] opacity-70 blur-2xl sm:-inset-6 sm:rounded-[2.5rem] sm:blur-3xl;
+    background: radial-gradient(ellipse at 50% 40%, rgba(99, 91, 255, 0.45) 0%, rgba(99, 91, 255, 0.08) 45%, transparent 70%);
+}
+
+.mkt-product-shot__frame {
+    @apply relative w-full max-w-full rounded-xl sm:rounded-2xl;
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        0 12px 28px -12px rgba(99, 91, 255, 0.35),
+        0 32px 64px -24px rgba(0, 0, 0, 0.65);
+}
+
+/* Soft light stage for light sections (product / inbox / follow-ups) */
+.mkt-product-stage {
+    @apply relative mx-auto w-full max-w-5xl rounded-2xl p-2 sm:rounded-3xl sm:p-4 lg:p-6;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(245, 246, 250, 0.6) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.8),
+        0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.mkt-product-stage--dark {
+    background:
+        linear-gradient(180deg, rgba(18, 22, 42, 0.9) 0%, rgba(8, 11, 24, 0.5) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
 .mkt-showcase {
-    @apply relative overflow-hidden rounded-2xl;
+    @apply relative mx-auto w-full max-w-5xl;
+    padding: 0.5rem 0 1rem;
+}
+
+@media (min-width: 640px) {
+    .mkt-showcase {
+        padding: 1.25rem 0.75rem 1.75rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .mkt-showcase {
+        /* Room for side float cards without horizontal page cut-off */
+        padding: 1.5rem 3.5rem 2rem;
+    }
+}
+
+.mkt-showcase__shot {
+    @apply relative z-0 mx-auto w-full;
 }
 
 .mkt-bento {
@@ -214,7 +269,7 @@ html:has(body.mkt-page) {
 }
 
 .mkt-bento-card {
-    @apply relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6;
+    @apply relative overflow-visible rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-6;
     box-shadow: 0 4px 24px rgba(15,23,42,0.06);
 }
 
@@ -300,12 +355,14 @@ html:has(body.mkt-page) {
         animation: none;
     }
 
-    .mkt-btn {
-        @apply w-full sm:w-auto;
-    }
-
     .mkt-section {
         @apply py-12;
+    }
+
+    /* Keep primary CTAs full-width only in stacked groups, not the nav */
+    .mkt-hero .mkt-btn,
+    .mkt-cta-section .mkt-btn {
+        @apply w-full;
     }
 }
 
@@ -326,11 +383,16 @@ html:has(body.mkt-page) {
 }
 
 .mkt-kanban-col {
-    @apply min-w-[88px] flex-1 rounded-xl border border-white/10 bg-white/5 p-2;
+    @apply rounded-xl border border-white/10 bg-white/5 p-2;
 }
 
 .mkt-kanban-card {
     @apply mb-2 rounded-lg border border-white/10 bg-[#12162a] p-2 text-[10px];
+}
+
+.mkt-kanban-scroll {
+    @apply -mx-1 overflow-x-auto px-1 scrollbar-thin;
+    -webkit-overflow-scrolling: touch;
 }
 
 .mkt-messy-item {

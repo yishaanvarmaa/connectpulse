@@ -28,13 +28,14 @@
     html {
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        overflow-x: clip;
     }
 
     body {
         @apply bg-slate-50 text-slate-800 text-sm leading-relaxed;
-        overflow-x: clip;
-        max-width: 100vw;
+    }
+
+    body:not(.mkt-page) {
+        overflow-x: hidden;
     }
 }
 
@@ -153,7 +154,7 @@
 
     /* WhatsApp Campaign Composer */
     .wa-composer-page {
-        @apply -mx-4 -mt-5 max-w-[100vw] overflow-x-clip sm:-mx-6 lg:-mx-8;
+        @apply -mx-4 -mt-5 sm:-mx-6 lg:-mx-8;
     }
 
     .wa-composer-hero {

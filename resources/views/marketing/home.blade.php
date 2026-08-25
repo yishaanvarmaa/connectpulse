@@ -26,16 +26,16 @@
                     <span>CRM</span><span>WhatsApp</span><span>Follow-ups</span><span>Pipeline</span>
                 </div>
             </div>
-            <div class="mkt-reveal min-w-0 lg:mr-0 xl:mr-0">
+            <div class="mkt-reveal w-full min-w-0">
                 <x-marketing.mockups.hero-dashboard />
             </div>
         </div>
     </div>
     <div class="mkt-trust-strip mt-10 lg:mt-14">
         <div class="mkt-wrap">
-            <div class="mkt-trust-strip__track">
+            <div class="mkt-trust-strip__track justify-between sm:justify-center">
                 @foreach(['Leads', 'Follow-ups', 'WhatsApp', 'Pipeline', 'Reports', 'Automation'] as $i => $item)
-                    @if($i > 0)<span class="mkt-trust-strip__divider"></span>@endif
+                    @if($i > 0)<span class="mkt-trust-strip__divider hidden sm:block"></span>@endif
                     <span class="mkt-trust-strip__item">{{ $item }}</span>
                 @endforeach
             </div>
@@ -88,23 +88,40 @@
             <p class="mkt-eyebrow mkt-eyebrow--light">Product</p>
             <h2 class="mkt-h2 mt-3 text-slate-900">One place to run your sales.</h2>
         </div>
-        <div class="relative mt-10 lg:mt-12 mkt-reveal mkt-showcase">
-            <x-marketing.mockups.hero-dashboard />
-            <div class="mkt-float-card--light absolute left-3 top-6 hidden rounded-2xl px-4 py-3 sm:block lg:left-4">
-                <p class="text-[10px] font-bold uppercase text-red-600">Overdue</p>
-                <p class="text-2xl font-bold text-slate-900">3</p>
+        <div class="mkt-showcase mt-10 mkt-reveal lg:mt-12">
+            <div class="mkt-product-stage">
+                <div class="mkt-showcase__shot">
+                    <x-marketing.mockups.hero-dashboard />
+                </div>
             </div>
-            <div class="mkt-float-card--light absolute right-3 top-1/4 hidden rounded-2xl px-4 py-3 sm:block">
-                <p class="text-[10px] font-bold uppercase text-slate-500">Pipeline</p>
-                <p class="text-2xl font-bold text-slate-900">₹1.24L</p>
+            {{-- Stats under the shot on mobile; float beside on large screens only --}}
+            <div class="mt-4 grid grid-cols-3 gap-2 sm:hidden">
+                <div class="rounded-xl border border-slate-200 bg-white px-2 py-3 text-center shadow-sm">
+                    <p class="text-[9px] font-bold uppercase text-red-600">Overdue</p>
+                    <p class="text-xl font-bold text-slate-900">3</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-white px-2 py-3 text-center shadow-sm">
+                    <p class="text-[9px] font-bold uppercase text-slate-500">Pipeline</p>
+                    <p class="text-xl font-bold text-slate-900">₹1.24L</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-white px-2 py-3 text-center shadow-sm">
+                    <p class="text-[9px] font-bold uppercase text-[#635bff]">New</p>
+                    <p class="text-xl font-bold text-slate-900">5</p>
+                </div>
             </div>
-            <div class="mkt-float-card--light absolute bottom-10 right-3 hidden rounded-2xl px-4 py-3 sm:block">
-                <p class="text-[10px] font-bold uppercase text-[#635bff]">New leads</p>
-                <p class="text-2xl font-bold text-slate-900">5</p>
-            </div>
-            <div class="mkt-float-card--light absolute bottom-4 left-1/4 hidden rounded-2xl px-4 py-3 lg:block">
-                <p class="text-[10px] font-bold uppercase text-amber-600">Demos today</p>
-                <p class="text-2xl font-bold text-slate-900">2</p>
+            <div class="pointer-events-none absolute inset-0 z-10 hidden lg:block">
+                <div class="mkt-float-card--light absolute left-2 top-20 rounded-2xl px-4 py-3">
+                    <p class="text-[10px] font-bold uppercase text-red-600">Overdue</p>
+                    <p class="text-2xl font-bold text-slate-900">3</p>
+                </div>
+                <div class="mkt-float-card--light absolute right-2 top-1/4 rounded-2xl px-4 py-3">
+                    <p class="text-[10px] font-bold uppercase text-slate-500">Pipeline</p>
+                    <p class="text-2xl font-bold text-slate-900">₹1.24L</p>
+                </div>
+                <div class="mkt-float-card--light absolute bottom-12 right-2 rounded-2xl px-4 py-3">
+                    <p class="text-[10px] font-bold uppercase text-[#635bff]">New leads</p>
+                    <p class="text-2xl font-bold text-slate-900">5</p>
+                </div>
             </div>
         </div>
     </div>
@@ -135,7 +152,7 @@
                 <div class="mkt-bento-card h-full">
                     <p class="text-xs font-bold uppercase tracking-wider text-[#635bff]">Follow-ups</p>
                     <h3 class="mt-2 text-xl font-bold text-slate-900">Never forget the next action.</h3>
-                    <div class="mt-4 overflow-hidden rounded-xl origin-top-left">
+                    <div class="mt-4 w-full min-w-0">
                         <x-marketing.mockups.followups />
                     </div>
                 </div>
@@ -148,7 +165,9 @@
                             <h3 class="mt-2 text-2xl font-bold text-slate-900">Your CRM knows who they are. Your inbox knows what they said.</h3>
                             <p class="mt-3 mkt-body--light">Open a lead, see the conversation, reply, and schedule the next action — without switching tools.</p>
                         </div>
-                        <x-marketing.mockups.inbox />
+                        <div class="min-w-0">
+                            <x-marketing.mockups.inbox />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -160,7 +179,9 @@
                             <h3 class="mt-2 text-2xl font-bold text-white">New → Contacted → Interested → Demo → Won</h3>
                             <p class="mt-3 text-slate-400">Know exactly how many opportunities you have and how much revenue is in your pipeline.</p>
                         </div>
-                        <x-marketing.mockups.pipeline />
+                        <div class="min-w-0">
+                            <x-marketing.mockups.pipeline />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -188,8 +209,10 @@
                     @endforeach
                 </div>
             </div>
-            <div class="mkt-reveal">
-                <x-marketing.mockups.followups />
+            <div class="mkt-reveal min-w-0">
+                <div class="mkt-product-stage mkt-product-stage--dark">
+                    <x-marketing.mockups.followups />
+                </div>
             </div>
         </div>
     </div>
@@ -202,7 +225,9 @@
             <h2 class="mkt-h2 text-slate-900">Your CRM knows who they are.<br>Your inbox knows what they said.</h2>
         </div>
         <div class="mt-10 mkt-reveal">
-            <x-marketing.mockups.inbox />
+            <div class="mkt-product-stage">
+                <x-marketing.mockups.inbox />
+            </div>
         </div>
     </div>
 </section>
@@ -213,14 +238,16 @@
         <div class="mkt-reveal mb-10 max-w-2xl">
             <h2 class="mkt-h2 text-white">See where every deal is going.</h2>
         </div>
-        <div class="mkt-reveal overflow-hidden">
-            <x-marketing.mockups.pipeline />
+        <div class="mkt-reveal w-full min-w-0">
+            <div class="mkt-product-stage mkt-product-stage--dark">
+                <x-marketing.mockups.pipeline />
+            </div>
         </div>
     </div>
 </section>
 
 {{-- AD TO SALE --}}
-<section class="mkt-section mkt-section--navy overflow-hidden">
+<section class="mkt-section mkt-section--navy">
     <div class="mkt-wrap">
         <div class="mkt-reveal text-center">
             <h2 class="mkt-h2 text-white">Your ads generate the lead.<br>ConnectPulse keeps it moving.</h2>
@@ -243,18 +270,18 @@
             <h2 class="mkt-h2 text-white">Your sales desk.<br>In your pocket.</h2>
             <p class="mx-auto mt-4 max-w-xl mkt-body">Check follow-ups, message leads, call customers, update deals — from your phone.</p>
         </div>
-        <div class="relative mt-12 flex flex-wrap justify-center gap-6 overflow-hidden px-2 sm:gap-10 mkt-reveal">
-            <div class="relative">
+        <div class="relative mt-12 flex flex-wrap justify-center gap-10 mkt-reveal">
+            <div class="relative mx-auto w-full max-w-[260px]">
                 <x-marketing.mockups.mobile-screen variant="home" />
-                <span class="mkt-notif-float left-1/2 top-6 -translate-x-1/2 sm:left-auto sm:right-0 sm:top-8 sm:translate-x-0 sm:-mr-2 md:-mr-6">Follow-up due in 10 min</span>
+                <span class="mkt-notif-float left-1/2 top-3 z-20 -translate-x-1/2">Follow-up due in 10 min</span>
             </div>
-            <div class="relative hidden sm:block">
+            <div class="relative mx-auto hidden w-full max-w-[260px] sm:block">
                 <x-marketing.mockups.mobile-screen variant="lead" />
-                <span class="mkt-notif-float left-0 top-1/2 -translate-y-1/2 -ml-2 md:-ml-6">₹24,999 opportunity</span>
+                <span class="mkt-notif-float left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 sm:left-0 sm:top-1/2 sm:translate-x-0">₹24,999 opportunity</span>
             </div>
-            <div class="relative hidden md:block">
+            <div class="relative mx-auto hidden w-full max-w-[260px] md:block">
                 <x-marketing.mockups.mobile-screen variant="followup" />
-                <span class="mkt-notif-float right-0 bottom-8 -mr-2 lg:-mr-4">New lead received</span>
+                <span class="mkt-notif-float bottom-6 left-1/2 z-20 -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0">New lead received</span>
             </div>
         </div>
     </div>

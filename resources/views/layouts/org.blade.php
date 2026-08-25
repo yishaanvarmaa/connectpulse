@@ -16,8 +16,8 @@
         }
     @endphp
 </head>
-<body class="h-full font-sans antialiased overflow-x-clip">
-<div class="flex h-full min-h-screen max-w-[100vw] overflow-x-clip bg-slate-50">
+<body class="h-full font-sans antialiased">
+<div class="flex h-full min-h-screen bg-slate-50">
     {{-- Desktop sidebar --}}
     <aside class="hidden lg:flex lg:w-60 lg:flex-col lg:fixed lg:inset-y-0 border-r border-slate-200/80 bg-white">
         <x-org.sidebar />
@@ -25,11 +25,11 @@
 
     {{-- Mobile sidebar --}}
     <div id="mobile-sidebar-backdrop" class="hidden fixed inset-0 z-40 bg-slate-900/40 lg:hidden"></div>
-    <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 z-50 w-72 -translate-x-full transform border-r border-slate-200 bg-white transition-transform duration-200 lg:hidden">
+    <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] -translate-x-full transform border-r border-slate-200 bg-white transition-transform duration-200 lg:hidden">
         <x-org.sidebar mobile />
     </aside>
 
-    <div class="flex flex-1 flex-col lg:pl-60">
+    <div class="flex min-w-0 flex-1 flex-col lg:pl-60">
         @php
             $pageHeaderTitle = $__env->yieldContent('page-title');
             $pageHeaderSubtitle = $__env->yieldContent('page-subtitle');
@@ -54,8 +54,8 @@
             <div data-toast data-toast-type="error" class="hidden">{{ $errors->first() }}</div>
         @endif
 
-        <main class="flex-1 overflow-x-clip overflow-y-auto scrollbar-thin">
-            <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8 pb-28 lg:pb-8">
+        <main class="min-w-0 flex-1 overflow-y-auto scrollbar-thin">
+            <div class="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8 pb-28 lg:pb-8">
                 @yield('content')
             </div>
         </main>

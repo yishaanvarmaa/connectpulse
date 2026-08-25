@@ -1,11 +1,12 @@
-<div class="relative">
+{{-- Pipeline product mockup — horizontal scroll, nothing clipped --}}
+<div class="relative w-full min-w-0">
     <x-marketing.browser-frame url="connectpulse.cloud/crm/pipeline" class="w-full">
-        <div class="p-4 sm:p-5">
-            <div class="mb-4 flex items-baseline justify-between">
+        <div class="p-3 sm:p-5">
+            <div class="mb-3 flex items-baseline justify-between gap-2 sm:mb-4">
                 <p class="text-sm font-bold text-white">Sales Pipeline</p>
-                <p class="text-2xl font-bold text-[#8b7cff]">₹1.24L</p>
+                <p class="shrink-0 text-lg font-bold text-[#8b7cff] sm:text-2xl">₹1.24L</p>
             </div>
-            <div class="flex gap-2 overflow-x-auto pb-2">
+            <div class="mkt-kanban-scroll flex gap-2 pb-1">
                 @foreach([
                     ['New', [['Anita', '₹8K'], ['Rohit', '₹12K']], 'border-slate-500/30'],
                     ['Contacted', [['Kavita', '₹15K']], 'border-blue-500/30'],
@@ -14,11 +15,11 @@
                     ['Negotiation', [['Ravi', '₹25K']], 'border-orange-500/30'],
                     ['Won', [['Neha', '₹30K']], 'border-emerald-500/30'],
                 ] as [$stage, $cards, $border])
-                    <div class="mkt-kanban-col min-w-[100px] {{ $border }}">
-                        <p class="mb-2 px-1 text-[9px] font-bold uppercase text-slate-500">{{ $stage }}</p>
+                    <div class="mkt-kanban-col w-[100px] shrink-0 sm:w-[108px] {{ $border }}">
+                        <p class="mb-2 truncate px-1 text-[9px] font-bold uppercase text-slate-500">{{ $stage }}</p>
                         @foreach($cards as [$name, $val])
                             <div class="mkt-kanban-card">
-                                <p class="font-semibold text-white">{{ $name }}</p>
+                                <p class="truncate font-semibold text-white">{{ $name }}</p>
                                 <p class="text-[#8b7cff]">{{ $val }}</p>
                             </div>
                         @endforeach
@@ -27,8 +28,4 @@
             </div>
         </div>
     </x-marketing.browser-frame>
-    <div class="mkt-float-card--light absolute bottom-3 left-3 right-3 rounded-2xl px-4 py-3 sm:bottom-4 sm:left-4 sm:right-auto sm:px-6 sm:py-4">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pipeline</p>
-        <p class="text-2xl font-extrabold text-slate-900 sm:text-3xl">₹1.24L</p>
-    </div>
 </div>

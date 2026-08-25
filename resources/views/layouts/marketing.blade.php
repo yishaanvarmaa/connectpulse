@@ -11,7 +11,7 @@
     @vite(['resources/css/app.css', 'resources/js/marketing.js'])
     <style>body.mkt-page { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }</style>
 </head>
-<body class="mkt-page overflow-x-clip" data-page="marketing">
+<body class="mkt-page" data-page="marketing">
     <header id="mkt-nav" class="mkt-nav mkt-nav--dark">
         <div class="mkt-nav__bar">
             <div class="mkt-wrap mkt-nav__inner">
@@ -51,7 +51,7 @@
         </div>
     </header>
 
-    <main class="overflow-x-clip">@yield('content')</main>
+    <main>@yield('content')</main>
 
     <footer class="mkt-footer">
         <div class="mkt-wrap py-14">
